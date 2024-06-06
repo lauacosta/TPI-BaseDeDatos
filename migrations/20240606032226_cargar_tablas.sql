@@ -1,5 +1,4 @@
 -- Add migration script here
-
 CREATE TABLE Profesores (
     DNI DECIMAL(8),
     Nombre varchar(50) NOT NULL,
@@ -25,7 +24,7 @@ CREATE TABLE Contactos (
     Tipo enum('Celular', 'Telefono', 'Email'),
     Direccion varchar(50),
     Medio enum('Personal', 'Empresarial', 'Otro'),
-    Numero int,
+    Numero int unsigned,
     PRIMARY KEY (DNIProfesor, Tipo, Medio),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
     UPDATE
@@ -92,7 +91,7 @@ CREATE TABLE AntecedentesDocentes (
     Cargo varchar(50),
     Desde date NOT NULL,
     Hasta date,
-    Dedicacion int,
+    Dedicacion int unsigned,
     DNIProfesor decimal(8),
     PRIMARY KEY (DNIProfesor, Institucion, Cargo, UnidadAcademica),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
@@ -101,7 +100,7 @@ CREATE TABLE AntecedentesDocentes (
 );
 
 CREATE TABLE ActividadesInvestigacion (
-    IDInvestigacion int,
+    IDInvestigacion int unsigned,
     Institucion varchar(50) NOT NULL,
     Categoria varchar(50) NOT NULL,
     AreaPPAL varchar(50) NOT NULL,
@@ -109,18 +108,18 @@ CREATE TABLE ActividadesInvestigacion (
 );
 
 CREATE TABLE ParticipaEnInvestigacion (
-    IDInvestigacion int,
+    IDInvestigacion int unsigned,
     DNIProfesor decimal(8),
     Desde date NOT NULL,
     Hasta date,
-    Dedicacion int NOT NULL,
+    Dedicacion int unsigned NOT NULL,
     PRIMARY KEY (IDInvestigacion, DNIProfesor),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI),
     FOREIGN KEY (IDInvestigacion) REFERENCES ActividadesInvestigacion(IDInvestigacion)
 );
 
 CREATE TABLE ActividadesExtensionUniversitaria (
-    IDActividad int,
+    IDActividad int unsigned,
     Institucion varchar(50) NOT NULL,
     Cargo varchar(50) NOT NULL,
     Categoria varchar(50) NOT NULL,
@@ -128,7 +127,7 @@ CREATE TABLE ActividadesExtensionUniversitaria (
 );
 
 CREATE TABLE RealizoActividad(
-    IDActividad int,
+    IDActividad int unsigned,
     DNIProfesor DECIMAL(8),
     Acciones varchar(50),
     Dedidacion int,
@@ -144,6 +143,7 @@ CREATE TABLE AntecedentesProfesionales (
     Cargo varchar(50),
     Empresa varchar(50),
     TipoActividad varchar(50),
+    -- No tendrian que ser no nulos?
     Desde date,
     Hasta date,
     PRIMARY KEY (DNIProfesor, Empresa, TipoActividad, Cargo),
@@ -153,23 +153,23 @@ CREATE TABLE AntecedentesProfesionales (
 );
 
 CREATE TABLE Publicaciones (
-    IDPublicacion int,
+    IDPublicacion int unsigned,
     Autores varchar(200) NOT NULL,
-    Anio decimal(4) NOT NULL,
+    Anio YEAR NOT NULL,
     Titulo varchar(50) NOT NULL,
     PRIMARY KEY (IDPublicacion)
 );
 
 CREATE TABLE ReferenciaBibliografica (
-    IDFuente int,
-    IDCitador int,
+    IDFuente int unsigned,
+    IDCitador int unsigned,
     PRIMARY KEY (IDFuente, IDCitador),
     FOREIGN KEY (IDFuente) REFERENCES Publicaciones(IDPublicacion),
     FOREIGN KEY (IDCitador) REFERENCES Publicaciones(IDPublicacion)
 );
 
 CREATE TABLE PublicoPublicacion(
-    IDPublicacion int,
+    IDPublicacion int unsigned,
     DNIProfesor decimal(8),
     PRIMARY KEY (IDPublicacion, DNIProfesor),
     FOREIGN KEY (IDPublicacion) REFERENCES Publicaciones(IDPublicacion),
@@ -209,7 +209,7 @@ CREATE TABLE DependenciasOEmpresas (
 );
 
 CREATE TABLE ObrasSociales (
-    IDObraSocial int,
+    IDObraSocial int unsigned,
     DNIBeneficiarios decimal(8),
     DNIProfesor decimal(8),
     -- FIXME: REVISAR SI ESTE ATRIBUTO HACE FALTA
@@ -247,7 +247,7 @@ CREATE TABLE PercibeEn (
 );
 
 CREATE TABLE DeclaracionesJuradas (
-    IDDeclaracion int,
+    IDDeclaracion int unsigned,
     DNIProfesor decimal(8),
     Fecha date,
     Lugar varchar(100),
@@ -260,28 +260,28 @@ CREATE TABLE DeclaracionesJuradas (
 );
 
 CREATE TABLE Direcciones (
-    CodigoPostal int,
+    CodigoPostal int unsigned,
     Calle varchar(100),
-    Numero int,
+    Numero int unsigned,
     Localidad varchar(100),
     Provincia varchar(100),
     PRIMARY KEY (CodigoPostal, Calle, Numero)
 );
 
 CREATE TABLE DeclaracionesDeCargo (
-    IDDeclaracion int,
+    IDDeclaracion int unsigned,
     CumpleHorario varchar(100) NOT NULL,
     Reparticion varchar(100) NOT NULL,
     Dependencia varchar(100) NOT NULL,
-    CodigoPostal int NOT NULL,
+    CodigoPostal int unsigned NOT NULL,
     Calle varchar(100) NOT NULL,
-    Numero int NOT NULL,
+    Numero int unsigned NOT NULL,
     PRIMARY KEY (IDDeclaracion),
     FOREIGN KEY (CodigoPostal, Calle, Numero) REFERENCES Direcciones(CodigoPostal, Calle, Numero)
 );
 
 CREATE TABLE Horarios (
-    IDDeclaracion int,
+    IDDeclaracion int unsigned,
     Dia enum(
         'Lunes',
         'Martes',
@@ -299,30 +299,30 @@ CREATE TABLE Horarios (
 
 CREATE TABLE CumpleCargo (
     DNIProfesor decimal(8),
-    IDDeclaracion int,
+    IDDeclaracion int unsigned,
     PRIMARY KEY (DNIProfesor, IDDeclaracion),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI),
     FOREIGN KEY (IDDeclaracion) REFERENCES DeclaracionesDeCargo(IDDeclaracion)
 );
 
 CREATE TABLE Empleadores (
-    CUIT_CUIL decimal(8),
+    CUIT_CUIL decimal(11),
     RazonSocial varchar(100),
-    CodigoPostal int NOT NULL,
+    CodigoPostal int unsigned NOT NULL,
     Calle varchar(100) NOT NULL,
-    Numero int NOT NULL,
-    Piso int,
-    Departamento char(1),
+    Numero int unsigned NOT NULL,
+    Piso int unsigned,
+    Departamento tinyint,
     PRIMARY KEY (CUIT_CUIL),
     FOREIGN KEY (CodigoPostal, Calle, Numero) REFERENCES Direcciones (CodigoPostal, Calle, Numero)
 );
 
 CREATE TABLE ResideEn (
     DNIProfesor decimal(8),
-    CodigoPostal int,
+    CodigoPostal int unsigned,
     Calle varchar(100),
-    Numero int,
-    Piso int,
+    Numero int unsigned,
+    Piso int unsigned,
     Departamento varchar(5),
     PRIMARY KEY (DNIProfesor, CodigoPostal, Calle, Numero),
     FOREIGN KEY(CodigoPostal, Calle, Numero) REFERENCES Direcciones (CodigoPostal, Calle, Numero),
@@ -330,7 +330,7 @@ CREATE TABLE ResideEn (
 );
 
 CREATE TABLE Seguros (
-    CodigoCompania int,
+    CodigoCompania int unsigned,
     CompaniaAseguradora varchar(100),
     LugarEmision varchar(100),
     FechaEmision date,
@@ -345,10 +345,10 @@ CREATE TABLE Beneficiarios (
     FechaNacimiento date NOT NULL,
     TipoDocumento varchar(50) NOT NULL,
     Porcentaje Numeric NOT NULL,
-    NumeroDir int NOT NULL,
-    CodigoPostal int NOT NULL,
+    NumeroDir int unsigned NOT NULL,
+    CodigoPostal int unsigned NOT NULL,
     Calle varchar(100) NOT NULL,
-    Piso int,
+    Piso int unsigned,
     Departamento char(1),
     PRIMARY KEY (DNI),
     FOREIGN KEY (CodigoPostal, Calle, NumeroDir) REFERENCES Direcciones (CodigoPostal, Calle, Numero)
@@ -357,7 +357,7 @@ CREATE TABLE Beneficiarios (
 CREATE TABLE AseguraA (
     DNIProfesor decimal(8),
     DNIBeneficiario decimal(8),
-    CodigoCompania int,
+    CodigoCompania int unsigned,
     CapitalAsegurado Numeric,
     FechaIngreso date,
     PRIMARY KEY (DNIProfesor, CodigoCompania),

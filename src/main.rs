@@ -20,6 +20,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let direcciones: Vec<Direcciones> = (1..=10).map(|_| rand::random()).collect();
     cargar_direcciones(&direcciones, &pool).await?;
+    println!("Se han cargado todas las direcciones correctamente!");
 
     let empleadores: Vec<Empleadores> = (1..=10)
         .map(|_| {
@@ -27,6 +28,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Empleadores::new(direccion)
         })
         .collect();
+    cargar_empleadores(&empleadores, &pool).await?;
+    println!("Se han cargado todos los empleadores correctamente!");
 
     let profesores: Vec<Profesores> = (1..=10)
         .map(|_| {
@@ -34,10 +37,67 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Profesores::new(empleador)
         })
         .collect();
+    cargar_profesores(&profesores, &pool).await?;
+    println!("Se han cargado todos los profesores correctamente!");
 
     Ok(())
 }
 
+async fn cargar_profesores(
+    profesores: &[Profesores],
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    for prof in profesores {
+        let str = sqlx::query!(
+            r#"
+            
+            insert into Profesores 
+            (DNI, Nombre, Apellido, FechaNacimiento, Nacionalidad, EstadoCivil, Sexo, CUIT, CUIL, CUITEmpleador)
+            values (?,?,?,?,?,?,'M',?,?,?)
+
+            "#,
+            prof.dni,
+            prof.nombre,
+            prof.apellido,
+            prof.fecha_nacimiento,
+            prof.nacionalidad,
+            prof.estado_civil,
+            // FIXME:: MySQL Error 0100 Data truncated in 'Sexo'
+            //prof.sexo,
+            prof.cuit,
+            prof.cuil,
+            prof.cuit_empleador
+        )
+        .execute(pool)
+        .await?;
+
+        println!("> Rows affected = {}", str.rows_affected());
+    }
+    Ok(())
+}
+async fn cargar_empleadores(
+    empleadores: &[Empleadores],
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    for emp in empleadores {
+        let str = sqlx::query!(
+            r#"insert into Empleadores (CUIT_CUIL, RazonSocial, CodigoPostal, Calle, Numero, Piso, Departamento) 
+values (?,?,?,?,?,?,?)"#,
+            emp.cuit_cuil,
+            emp.razon_social,
+            emp.codigo_postal,
+            emp.calle,
+            emp.numero,
+            emp.piso,
+            emp.departamento
+        )
+        .execute(pool)
+        .await?;
+
+        println!("> Rows affected = {}", str.rows_affected());
+    }
+    Ok(())
+}
 async fn cargar_direcciones(
     direcciones: &[Direcciones],
     pool: &Pool<MySql>,

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use bigdecimal::num_bigint::BigInt;
 use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::faker::time::en::Date;
@@ -9,20 +10,21 @@ use rand::{
     seq::SliceRandom,
     thread_rng, Rng,
 };
-use time::Date;
+use sqlx::types::{time::Date, BigDecimal};
 
 #[derive(Debug)]
 pub struct Profesores {
-    dni: u32,
-    nombre: String,
-    apellido: String,
-    fecha_nacimiento: Date,
+    pub dni: BigDecimal,
+    pub nombre: String,
+    pub apellido: String,
+    pub fecha_nacimiento: Date,
+    pub nacionalidad: String,
     //TODO: Evaluar si utilizo un enum o solamente al generar los valores los genero en base a un set.
-    estado_civil: String, // ('Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente')
-    sexo: String,         // ('M', 'F')
-    cuit: u64,
-    cuil: u64,
-    cuit_empleador: u64, //FIXME: FK de Empleador
+    pub estado_civil: String, // ('Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente')
+    pub sexo: String,         // ('M', 'F')
+    pub cuit: BigDecimal,
+    pub cuil: BigDecimal,
+    pub cuit_empleador: BigDecimal, //FIXME: FK de Empleador
 }
 
 impl Profesores {
@@ -42,15 +44,17 @@ impl Profesores {
         .to_string();
         let sexo = ["M", "F"].choose(&mut thread_rng()).unwrap().to_string();
         let fecha_nacimiento = Date().fake();
+        let nacionalidad = CountryName().fake();
         let cuit = CUIL::new();
         let cuil = CUIL::new();
-        let cuit_empleador = empleador.cuit_cuil;
+        let cuit_empleador = empleador.cuit_cuil.clone();
 
         Self {
             dni,
             nombre,
             apellido,
             fecha_nacimiento,
+            nacionalidad,
             estado_civil,
             sexo,
             cuit,
@@ -61,9 +65,9 @@ impl Profesores {
 }
 
 pub struct Contactos {
-    dni_profesor: u8, //FIXME: FK de Profesores
-    tipo: String,     // ('Celular', 'Telefono', 'Email')
-    medio: String,    // ('Personal', 'Empresarial', 'Otro')
+    dni_profesor: BigDecimal, //FIXME: FK de Profesores
+    tipo: String,             // ('Celular', 'Telefono', 'Email')
+    medio: String,            // ('Personal', 'Empresarial', 'Otro')
     direccion: Option<String>,
     numero: Option<u32>,
 }
@@ -95,8 +99,8 @@ pub struct AntecedentesDocentes {
     cargo: String,
     desde: Date,
     hasta: Option<Date>,
-    dedicacion: Option<u8>,
-    dni_profesor: u8, // FIXME: FK de Profesores
+    dedicacion: Option<u32>,
+    dni_profesor: BigDecimal, // FIXME: FK de Profesores
 }
 
 pub struct ActividadesInvestigacion {
@@ -118,15 +122,18 @@ pub struct ActividadesExtensionUniversitaria {
 //FIXME: struct RealizoActividad?
 
 pub struct AntecedentesProfesionales {
-    dni_profesor: u8, //FIXME: FK de Profesores
+    dni_profesor: BigDecimal, //FIXME: FK de Profesores
     cargo: String,
     empresa: String,
     tipo_actividad: String,
+    desde: Option<Date>,
+    hasta: Option<Date>,
 }
 
 pub struct Publicaciones {
     id_publicacion: u32,
     autores: String,
+    // FIXME: Tengo que extraer el año de esta fecha
     anio: Date,
     titulo: String,
 }
@@ -142,7 +149,7 @@ pub struct ReunionesCientificas {
 //FIXME: struct ParticipoEnReunion?
 
 pub struct DependenciasOEmpresas {
-    dni_profesor: u8, //FIXME: FK de Profesores
+    dni_profesor: BigDecimal, //FIXME: FK de Profesores
     nombre: String,
     fecha_ingreso: Date,
     cargo: String,
@@ -155,8 +162,8 @@ pub struct DependenciasOEmpresas {
 
 pub struct ObrasSociales {
     id_obra_social: u32,
-    dni_profesor: u8, // FIXME: FK de Profesores
-    dni_beneficiarios: Option<u8>,
+    dni_profesor: BigDecimal, // FIXME: FK de Profesores
+    dni_beneficiarios: Option<BigDecimal>,
     tipo_personal: String, // ('No Docente', 'Docente', 'Contratado', 'Becario')
     tipo_caracter: String, // ('Titular', 'Suplente', 'Graduado', 'Estudiante', 'Interino')
     presta_servicios: bool,
@@ -174,7 +181,7 @@ pub struct Percepciones {
 
 pub struct DeclaracionesJuradas {
     id_declaracion: u32,
-    dni_profesor: u8, // FIXME: FK de Profesores
+    dni_profesor: BigDecimal, // FIXME: FK de Profesores
     fecha: Option<Date>,
     lugar: Option<String>,
 }
@@ -236,14 +243,14 @@ pub struct Horarios {
 
 #[derive(Debug)]
 pub struct Empleadores {
-    cuit_cuil: u64,
-    razon_social: String,
-    piso: Option<u32>,
-    departamento: Option<char>,
+    pub cuit_cuil: BigDecimal,
+    pub razon_social: String,
+    pub piso: Option<u32>,
+    pub departamento: Option<u8>,
     //FIXME: FK de Direcciones
-    codigo_postal: u32,
-    calle: String,
-    numero: u32,
+    pub codigo_postal: u32,
+    pub calle: String,
+    pub numero: u32,
 }
 
 impl Empleadores {
@@ -258,7 +265,7 @@ impl Empleadores {
         };
         let habitacion: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         let departamento = if vive_en_departamento {
-            Some(habitacion[rng.gen_range(0..habitacion.len())] as char)
+            Some(habitacion[rng.gen_range(0..habitacion.len())])
         } else {
             None
         };
@@ -285,13 +292,13 @@ pub struct Seguros {
 }
 
 pub struct Beneficiarios {
-    dni: u8,
+    dni: BigDecimal,
     nombre: String,
     apellido: String,
     parentesco: String,
     fecha_nacimiento: Date,
     tipo_documento: String,
-    porcentaje: f32,
+    porcentaje: BigDecimal,
     piso: Option<u32>,
     departamento: Option<char>,
     //FIXME: FK de Direcciones
@@ -305,16 +312,19 @@ pub struct Beneficiarios {
 struct CUIL;
 
 impl CUIL {
-    fn new() -> u64 {
+    fn new() -> BigDecimal {
         let mut rng = rand::thread_rng();
-        rng.gen_range(10000000000..100000000000)
+        //FIXME: VER COMO GENERAR NUMEROS de 11 cifras.
+        let digits: BigInt = rng.gen_range(100000000..1000000000).into();
+        BigDecimal::new(digits.into(), 0)
     }
 }
 
 struct DNI;
 impl DNI {
-    fn new() -> u32 {
+    fn new() -> BigDecimal {
         let mut rng = rand::thread_rng();
-        rng.gen_range(10000000..100000000)
+        let digits: BigInt = rng.gen_range(10000000..100000000).into();
+        BigDecimal::new(digits, 0)
     }
 }

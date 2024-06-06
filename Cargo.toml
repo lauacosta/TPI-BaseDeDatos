@@ -8,6 +8,6 @@ bigdecimal = "0.4.3"
 dotenv = "0.15.0"
 fake = { version = "2.9.2", features = ["time"] }
 rand = "0.8.5"
-sqlx = { version = "0.7", features = [ "runtime-async-std", "mysql", "macros", "chrono", "bigdecimal"] }
+sqlx = { version = "0.7", features = [ "runtime-async-std", "mysql", "macros", "bigdecimal", "time"] }
 time = "0.3.36"
 tokio = { version = "1.38.0", features = ["full"] }
