@@ -598,23 +598,18 @@ pub async fn cargar_realizo_actividad(
         let acciones: String = Word().fake();
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
-        let hasta = if rng.gen::<bool>() {
-            Some(desde + Duration::days(365))
-        } else {
-            None
-        };
-        let _dedicacion = rng.gen_range(1..8);
+        let hasta = desde + Duration::days(365);
+        let dedicacion = rng.gen_range(1..8);
 
-        //FIXME: Revisar por qué considera que Dedicacion no es parte de la tabla.
         match sqlx::query!(
             r#"
-            insert into RealizoActividad (IDActividad, DNIProfesor, Acciones, Hasta, Desde)
-            values (?,?,?,?,?)
+            insert into RealizoActividad (IDActividad, DNIProfesor, Acciones, Dedicacion, Hasta, Desde)
+            values (?,?,?,?,?,?)
             "#,
             act.id_actividad,
             prof.dni,
             acciones,
-            //dedicacion,
+            dedicacion,
             hasta,
             desde
         )

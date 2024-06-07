@@ -28,7 +28,7 @@ pub struct Profesores {
     //TODO: Evaluar si utilizo un enum o solamente al generar los valores los genero en base a un set.
     pub estado_civil: String, // ('Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente')
     pub sexo: String,         // ('M', 'F')
-    pub cuit: BigDecimal,
+    pub cuit: Option<BigDecimal>,
     pub cuil: BigDecimal,
     pub cuit_empleador: BigDecimal, //WARN: FK de Empleador
 }
@@ -51,8 +51,13 @@ impl Profesores {
         let sexo = ["M", "F"].choose(&mut thread_rng()).unwrap().to_string();
         let fecha_nacimiento = Date().fake();
         let nacionalidad = CountryName().fake();
-        let cuit = CUIL::new();
         let cuil = CUIL::new();
+        let cuit = if thread_rng().gen::<bool>() {
+            Some(CUIL::new())
+        } else {
+            None
+        };
+
         let cuit_empleador = empleador.cuit_cuil.clone();
 
         Self {

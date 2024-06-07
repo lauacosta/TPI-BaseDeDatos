@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     cargar_idiomas(&idiomas, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
 
-    let direcciones: Vec<Direcciones> = gen_tablas(muestras);
+    let direcciones: Vec<Direcciones> = gen_tablas(10);
     cargar_direcciones(&direcciones, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Direcciones".green());
 
