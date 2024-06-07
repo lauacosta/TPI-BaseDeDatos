@@ -329,52 +329,150 @@ impl Publicaciones {
     }
 }
 
-//FIXME: struct ReferenciaBibligrafica?
-//FIXME: struct PublicoPublicacion?
-
 pub struct ReunionesCientificas {
-    titulo: String,
-    fecha: Date,
+    pub titulo: String,
+    pub fecha: Date,
+}
+
+impl ReunionesCientificas {
+    pub fn new() -> Self {
+        let aux: Vec<String> = Words(1..5).fake();
+        let titulo = aux.join(" ");
+        Self {
+            titulo,
+            fecha: Date().fake(),
+        }
+    }
 }
 
 //FIXME: struct ParticipoEnReunion?
 
 pub struct DependenciasOEmpresas {
-    dni_profesor: BigDecimal, //FIXME: FK de Profesores
-    nombre: String,
-    fecha_ingreso: Date,
-    cargo: String,
-    lugar: Option<String>,
-    tipo_actividad: Option<String>, // ('Autonomo', 'Dependencia')
-    obra_social: Option<String>,
-    observacion: Option<String>,
-    naturaleza_juridica: Option<String>, // ('Privado', 'Publico')
+    pub dni_profesor: BigDecimal, //FIXME: FK de Profesores
+    pub nombre: String,
+    pub fecha_ingreso: Date,
+    pub cargo: String,
+    pub lugar: Option<String>,
+    pub tipo_actividad: String, // ('Autonomo', 'Dependencia')
+    pub obra_social: String,
+    pub observacion: String,
+    pub naturaleza_juridica: String, // ('Privado', 'Publico')
+}
+
+impl DependenciasOEmpresas {
+    pub fn new(profesor: &Profesores) -> Self {
+        let dni_profesor = profesor.dni.clone();
+        let nombre = CompanyName().fake();
+        let fecha_ingreso = Date().fake();
+        let cargo = Word().fake();
+        let lugar = Word().fake();
+        let tipo_actividad = ["Autonomo", "Dependencia"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        let obra_social = Word().fake();
+        let aux: Vec<String> = Words(1..20).fake();
+        let observacion = aux.join(" ");
+        let naturaleza_juridica = ["Privado", "Publico"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        Self {
+            dni_profesor,
+            nombre,
+            fecha_ingreso,
+            cargo,
+            lugar,
+            tipo_actividad,
+            obra_social,
+            observacion,
+            naturaleza_juridica,
+        }
+    }
 }
 
 pub struct ObrasSociales {
-    id_obra_social: u32,
-    dni_profesor: BigDecimal, // FIXME: FK de Profesores
-    dni_beneficiarios: Option<BigDecimal>,
-    tipo_personal: String, // ('No Docente', 'Docente', 'Contratado', 'Becario')
-    tipo_caracter: String, // ('Titular', 'Suplente', 'Graduado', 'Estudiante', 'Interino')
-    presta_servicios: bool,
-    dependencia: String,
+    pub id_obra_social: u32,
+    pub dni_profesor: BigDecimal, // FIXME: FK de Profesores
+    pub dni_beneficiarios: Option<BigDecimal>,
+    pub tipo_personal: String, // ('No Docente', 'Docente', 'Contratado', 'Becario')
+    pub tipo_caracter: String, // ('Titular', 'Suplente', 'Graduado', 'Estudiante', 'Interino')
+    pub presta_servicios: bool,
+    pub dependencia: String,
+}
+
+impl ObrasSociales {
+    pub fn new(profesor: &Profesores, beneficiario: Option<&Beneficiarios>) -> Self {
+        let id_obra_social = thread_rng().gen();
+        let dni_profesor = profesor.dni.clone();
+        let dni_beneficiarios = match beneficiario {
+            Some(b) => Some(b.dni.clone()),
+            None => None,
+        };
+        let tipo_personal = ["No Docente", "Docente", "Contratado", "Becario"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        let tipo_caracter = ["Titular", "Suplente", "Graduado", "Estudiante", "Interino"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        let presta_servicios = thread_rng().gen::<bool>();
+        let dependencia: String = Word().fake();
+
+        Self {
+            id_obra_social,
+            dni_profesor,
+            dni_beneficiarios,
+            tipo_personal,
+            tipo_caracter,
+            presta_servicios,
+            dependencia,
+        }
+    }
 }
 
 pub struct Percepciones {
-    institucion_caja: String,
-    tipo: String,
-    regimen: String,
-    causa: String,
+    pub institucion_caja: String,
+    pub tipo: String,
+    pub regimen: String,
+    pub causa: String,
+}
+
+impl Percepciones {
+    pub fn new() -> Self {
+        Self {
+            institucion_caja: Word().fake(),
+            tipo: Word().fake(),
+            regimen: Word().fake(),
+            causa: Word().fake(),
+        }
+    }
 }
 
 // FIXME:: struct PercibeEn?
 
 pub struct DeclaracionesJuradas {
-    id_declaracion: u32,
-    dni_profesor: BigDecimal, // FIXME: FK de Profesores
-    fecha: Option<Date>,
-    lugar: Option<String>,
+    pub id_declaracion: u32,
+    pub dni_profesor: BigDecimal, // FIXME: FK de Profesores
+    pub fecha: Date,
+    pub lugar: String,
+}
+
+impl DeclaracionesJuradas {
+    pub fn new(profesor: &Profesores) -> Self {
+        let id_declaracion = thread_rng().gen();
+        let dni_profesor = profesor.dni.clone();
+        let lugar = CityName().fake();
+        let fecha = Date().fake();
+
+        Self {
+            id_declaracion,
+            dni_profesor,
+            fecha,
+            lugar,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -388,9 +486,13 @@ pub struct Direcciones {
 
 impl Distribution<Direcciones> for Standard {
     fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Direcciones {
-        let codigo_postal = rng.gen_range(1000..10000);
+        let aux: String = BuildingNumber().fake();
+        let numero = aux
+            .parse()
+            .expect("Fallo en transforma de String a u32 'BuildingNumber()'");
+
         let calle = StreetName().fake();
-        let numero = rng.gen_range(1..1000);
+        let codigo_postal = rng.gen_range(1000..10000);
         let localidad = if rng.gen::<bool>() {
             Some(CityName().fake())
         } else {
@@ -413,21 +515,61 @@ impl Distribution<Direcciones> for Standard {
 }
 
 pub struct DeclaracionesDeCargo {
-    id_declaracion: u32,
-    cumple_horario: String,
-    reparticion: String,
-    dependencia: String,
+    pub id_declaracion: u32,
+    pub cumple_horario: String,
+    pub reparticion: String,
+    pub dependencia: String,
     //FIXME: FK de Direcciones
-    codigo_postal: u32,
-    calle: String,
-    numero: u32,
+    pub codigo_postal: u32,
+    pub calle: String,
+    pub numero: u32,
+}
+
+impl DeclaracionesDeCargo {
+    pub fn new(direccion: &Direcciones) -> Self {
+        let id_declaracion = thread_rng().gen();
+        let cumple_horario = Word().fake();
+        let reparticion = Word().fake();
+        let dependencia = Word().fake();
+        let codigo_postal = direccion.codigo_postal;
+        let calle = direccion.calle.clone();
+        let numero = direccion.numero;
+        Self {
+            id_declaracion,
+            cumple_horario,
+            reparticion,
+            dependencia,
+            codigo_postal,
+            calle,
+            numero,
+        }
+    }
 }
 
 pub struct Horarios {
-    id_declaracion: u32, //FIXME: FK de DeclaracionesDeCargo
-    dia: String,         // ('Lunes','Martes','Miercoles','Jueves','Viernes')
-    rango_horario: String,
-    nombre_catedra: String,
+    pub id_declaracion: u32, //FIXME: FK de DeclaracionesDeCargo
+    pub dia: String,         // ('Lunes','Martes','Miercoles','Jueves','Viernes')
+    pub rango_horario: String,
+    pub nombre_catedra: String,
+}
+
+impl Horarios {
+    pub fn new(declaracion: &DeclaracionesDeCargo) -> Self {
+        let id_declaracion = declaracion.id_declaracion;
+        let dia = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        // FIXME: Generar rangos horarios;
+        let rango_horario = Word().fake();
+        let nombre_catedra = Word().fake();
+        Self {
+            id_declaracion,
+            dia,
+            rango_horario,
+            nombre_catedra,
+        }
+    }
 }
 
 // FIXME: struct CumpleCargo?
@@ -476,26 +618,94 @@ impl Empleadores {
 // FIXME: struct ResideEn?
 
 pub struct Seguros {
-    codigo_compania: u32,
-    compania_aseguradora: String,
-    lugar_emision: String,
-    fecha_emision: Date,
+    pub codigo_compania: u32,
+    pub compania_aseguradora: String,
+    pub lugar_emision: String,
+    pub fecha_emision: Date,
+}
+
+impl Seguros {
+    pub fn new() -> Self {
+        let codigo_compania = thread_rng().gen();
+        let compania_aseguradora = CompanyName().fake();
+        let lugar_emision = CityName().fake();
+        let fecha_emision = Date().fake();
+
+        Self {
+            codigo_compania,
+            compania_aseguradora,
+            lugar_emision,
+            fecha_emision,
+        }
+    }
 }
 
 pub struct Beneficiarios {
-    dni: BigDecimal,
-    nombre: String,
-    apellido: String,
-    parentesco: String,
-    fecha_nacimiento: Date,
-    tipo_documento: String,
-    porcentaje: BigDecimal,
-    piso: Option<u32>,
-    departamento: Option<char>,
+    pub dni: BigDecimal,
+    pub nombre: String,
+    pub apellido: String,
+    pub parentesco: String,
+    pub fecha_nacimiento: Date,
+    pub tipo_documento: String,
+    pub porcentaje: BigDecimal,
+    pub piso: Option<u32>,
+    pub departamento: Option<u8>,
     //FIXME: FK de Direcciones
-    numero_dir: u32,
-    codigo_postal: u32,
-    calle: String,
+    pub numero_dir: u32,
+    pub codigo_postal: u32,
+    pub calle: String,
+}
+
+impl Beneficiarios {
+    pub fn new(direccion: &Direcciones) -> Self {
+        let mut rng = thread_rng();
+        let dni = DNI::new();
+        let nombre = FirstName().fake();
+        let apellido = LastName().fake();
+        let parentesco = ["Cónyuge", "Hijo", "Padre", "Pareja", "Hermano"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        let fecha_nacimiento = Date().fake();
+        //FIXME: Que tipos de documento pueden ser?
+        let tipo_documento = Word().fake();
+        // FIXME: Va a ocurrir que entre los beneficiarios o no cubriran el 100% o sobrepasaran el
+        // 100%, por como está definido esto.
+        let porcentaje = BigDecimal::new(
+            thread_rng().gen_range(1..2).into(),
+            thread_rng().gen_range(1..27),
+        );
+        let vive_en_departamento = rng.gen::<bool>();
+        let piso = if vive_en_departamento {
+            Some(rng.gen_range(1..1000))
+        } else {
+            None
+        };
+        let habitacion: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let departamento = if vive_en_departamento {
+            Some(habitacion[rng.gen_range(0..habitacion.len())])
+        } else {
+            None
+        };
+        let numero_dir = direccion.numero;
+        let codigo_postal = direccion.codigo_postal;
+        let calle = direccion.calle.clone();
+
+        Self {
+            dni,
+            nombre,
+            apellido,
+            parentesco,
+            fecha_nacimiento,
+            tipo_documento,
+            porcentaje,
+            piso,
+            departamento,
+            numero_dir,
+            codigo_postal,
+            calle,
+        }
+    }
 }
 
 // FIXME: struct AseguraA?

@@ -144,8 +144,8 @@ CREATE TABLE AntecedentesProfesionales (
     Empresa varchar(50),
     TipoActividad varchar(50),
     -- No tendrian que ser no nulos?
-    Desde date,
-    Hasta date,
+    Desde date not null,
+    Hasta date not null,
     PRIMARY KEY (DNIProfesor, Empresa, TipoActividad, Cargo),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
     UPDATE
@@ -198,9 +198,9 @@ CREATE TABLE DependenciasOEmpresas (
     FechaIngreso date,
     Cargo varchar(50),
     Lugar varchar(100),
-    TipoActividad enum('Autónomo', 'Relación de Dependencia'),
-    ObraSocial varchar(50),
-    Observacion varchar(250),
+    TipoActividad enum('Autónomo', 'Dependencia') not null,
+    ObraSocial varchar(50) not null, 
+    Observacion varchar(250) not null,
     NaturalezaJuridica enum('Privado', 'Publico'),
     PRIMARY KEY (DNIProfesor, Nombre, FechaIngreso, Cargo),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
@@ -249,8 +249,8 @@ CREATE TABLE PercibeEn (
 CREATE TABLE DeclaracionesJuradas (
     IDDeclaracion int unsigned,
     DNIProfesor decimal(8),
-    Fecha date,
-    Lugar varchar(100),
+    Fecha date not null,
+    Lugar varchar(100) not null,
     PRIMARY KEY (DNIProfesor, IDDeclaracion),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON
     UPDATE
@@ -323,7 +323,7 @@ CREATE TABLE ResideEn (
     Calle varchar(100),
     Numero int unsigned,
     Piso int unsigned,
-    Departamento varchar(5),
+    Departamento tinyint,
     PRIMARY KEY (DNIProfesor, CodigoPostal, Calle, Numero),
     FOREIGN KEY(CodigoPostal, Calle, Numero) REFERENCES Direcciones (CodigoPostal, Calle, Numero),
     FOREIGN KEY(DNIProfesor) REFERENCES Profesores(DNI)
@@ -343,13 +343,14 @@ CREATE TABLE Beneficiarios (
     Apellido varchar(50) NOT NULL,
     Parentesco varchar (25) NOT NULL,
     FechaNacimiento date NOT NULL,
+    -- FIXME: Que tipos de documento pueden ser?
     TipoDocumento varchar(50) NOT NULL,
     Porcentaje Numeric NOT NULL,
     NumeroDir int unsigned NOT NULL,
     CodigoPostal int unsigned NOT NULL,
     Calle varchar(100) NOT NULL,
     Piso int unsigned,
-    Departamento char(1),
+    Departamento tinyint,
     PRIMARY KEY (DNI),
     FOREIGN KEY (CodigoPostal, Calle, NumeroDir) REFERENCES Direcciones (CodigoPostal, Calle, Numero)
 );
