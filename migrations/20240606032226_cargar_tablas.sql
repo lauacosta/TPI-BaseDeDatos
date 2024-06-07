@@ -48,7 +48,7 @@ CREATE TABLE ConoceIdioma (
 );
 
 CREATE TABLE Titulos (
-    Institucion varchar(50),
+    Institucion varchar(100),
     Nivel varchar(50),
     Titulo varchar(100),
     PRIMARY KEY (Institucion, Nivel, Titulo)
@@ -56,9 +56,9 @@ CREATE TABLE Titulos (
 
 CREATE TABLE PoseeTitulo (
     DNI decimal(8),
-    Institucion varchar(50),
+    Institucion varchar(100),
     Nivel varchar(50),
-    Titulo varchar(50),
+    Titulo varchar(100),
     Desde date NOT NULL,
     Hasta date NOT NULL,
     PRIMARY KEY (DNI, Institucion, Nivel, Titulo),
@@ -289,7 +289,7 @@ CREATE TABLE Horarios (
         'Jueves',
         'Viernes'
     ),
-    RangoHorario varchar(100),
+    RangoHorario varchar(25),
     NombreCatedra varchar(50),
     PRIMARY KEY (IDDeclaracion, Dia, RangoHorario),
     FOREIGN KEY (IDDeclaracion) REFERENCES DeclaracionesDeCargo(IDDeclaracion) ON DELETE CASCADE ON

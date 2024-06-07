@@ -7,7 +7,7 @@ edition = "2021"
 bigdecimal = "0.4.3"
 colored = "2.1.0"
 dotenv = "0.15.0"
-fake = { version = "2.9.2", features = ["time"] }
+fake = { version = "2.9.2", features = ["time", "derive"] }
 rand = "0.8.5"
 sqlx = { version = "0.7", features = [ "runtime-async-std", "mysql", "macros", "bigdecimal", "time"] }
 time = "0.3.36"
