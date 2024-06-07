@@ -1,4 +1,5 @@
 use carga_datos::*;
+use colored::Colorize;
 use dotenv::dotenv;
 use fake::faker::lorem::en::*;
 use fake::faker::time::en::Date;
@@ -12,38 +13,45 @@ use sqlx::{MySql, Pool};
 use std::error::Error;
 use time::Duration;
 
-/// Orden de carga hasta ahora:
-/// 1. Direcciones
-/// 2. Empleadores
-/// 3. Profesores
-/// 4. Contactos
-/// 5. ConoceIdiomas
-/// 6. Titulos
-/// 7. PoseeTitulo
-/// 8. CursosOConferencias
-/// 9. AtendioA
-/// 10. AntecedentesDocentes
-/// 11. ActividadesInvestigacion
-/// 12. ParticipaEnInvestigacion
-/// 13. ActividadesExtensionUniversitaria
-/// 14. RealizoActividad
-/// 15. AntecedentesProfesionales
-/// 16. Publicaciones
-/// 17. ReferenciaBibliografica
-/// 18. PublicoPublicacion
-/// 19. ParticipoEnReunion
-/// 20. DependenciasOEmpresas
-/// 21. Beneficiarios
-/// 22. ObrasSociales
-/// 23. Percepciones
-/// 24. PercibeEn
-/// 25. DeclaracionesJuradas
-/// 26. DeclaracionesDeCargo
-/// 27. Horarios
-/// 28. CumpleCargo
-/// 29. ResideEn
-/// 30. Seguros
-/// 31. AseguraA
+/* Orden de carga hasta ahora:
+Primero aquellas tablas que no tienen FKs.
+    1. Direcciones
+    2. Idiomas
+    3. Titulos
+    4. CursosOConferencias
+    5. ActividadesInvestigacion
+    6. ActividadesExtensionUniversitaria
+    7. Publicaciones
+    8. ReunionesCientificas
+    9. Percepciones
+    10. Seguros
+*/
+
+/* Segundo, aquellas tablas que contienen FKs.
+    11. Empleadores
+    12. Profesores
+    13. Contactos
+    14. ConoceIdiomas
+    15. PoseeTitulo
+    16. AtendioA
+    17. AntecedentesDocentes
+    18. ParticipaEnInvestigacion
+    19. RealizoActividad
+    20. AntecedentesProfesionales
+    21. ReferenciaBibliografica
+    22. PublicoPublicacion
+    23. ParticipoEnReunion
+    24. DependenciasOEmpresas
+    25. Beneficiarios
+    26. ObrasSociales
+    27. PercibeEn
+    28. DeclaracionesJuradas
+    29. DeclaracionesDeCargo
+    30. Horarios
+    31. CumpleCargo
+    32. ResideEn
+    33. AseguraA
+*/
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -53,12 +61,76 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = MySqlPoolOptions::new().connect(&db_url).await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 10000;
+    let muestras = 1000;
 
+    // Primero aquellas tablas que no tienen FK.
     let direcciones: Vec<Direcciones> = (1..=muestras).map(|_| rand::random()).collect();
     cargar_direcciones(&direcciones, &pool).await?;
-    println!("Se han cargado todas las direcciones correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Direcciones".green());
 
+    let idiomas = [
+        "Inglés",
+        "Español",
+        "Portugues",
+        "Mandarín",
+        "Japones",
+        "Italiano",
+    ];
+    cargar_idiomas(&idiomas, &pool).await?;
+    eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
+
+    let titulos: Vec<Titulos> = (1..=muestras).map(|_| Titulos::new()).collect();
+    cargar_titulos(&titulos, &pool).await?;
+    eprintln!("Se ha cargado {} correctamente!", "Titulos".green());
+
+    let cursos_conferencias: Vec<CursoOConferencia> =
+        (1..=muestras).map(|_| CursoOConferencia::new()).collect();
+    cargar_cur_conf(&cursos_conferencias, &pool).await?;
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "CursosOConferencia".green()
+    );
+
+    let actividades_investigacion: Vec<ActividadesInvestigacion> = (1..=muestras)
+        .map(|_| ActividadesInvestigacion::new())
+        .collect();
+    cargar_actividades_investigacion(&actividades_investigacion, &pool).await?;
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ActividadesInvestigacion".green()
+    );
+
+    let actividad_universitaria: Vec<ActividadesExtensionUniversitaria> = (1..=muestras)
+        .map(|_| ActividadesExtensionUniversitaria::new())
+        .collect();
+    cargar_actividad_universitaria(&actividad_universitaria, &pool).await?;
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ActividadesExtensionUniversitaria".green()
+    );
+
+    let publicaciones: Vec<Publicaciones> = (1..=muestras).map(|_| Publicaciones::new()).collect();
+    cargar_publicaciones(&publicaciones, &pool).await?;
+    eprintln!("Se ha cargado {} correctamente!", "Publicaciones".green());
+
+    let reuniones: Vec<ReunionesCientificas> = (1..=muestras)
+        .map(|_| ReunionesCientificas::new())
+        .collect();
+    cargar_reuniones_cientificas(&reuniones, &pool).await?;
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ReunionesCientificas".green()
+    );
+
+    let percepciones: Vec<Percepciones> = (1..=muestras).map(|_| Percepciones::new()).collect();
+    cargar_percepciones(&percepciones, &pool).await?;
+    eprintln!("Se ha cargado {} correctamente!", "Percepciones".green());
+
+    let seguros: Vec<Seguros> = (1..=muestras).map(|_| Seguros::new()).collect();
+    cargar_seguros(&seguros, &pool).await?;
+    eprintln!("Se ha cargado {} correctamente!", "Seguros".green());
+
+    // Segundo, aquellas tablas que contienen FKs.
     let empleadores: Vec<Empleadores> = (1..=muestras)
         .map(|_| {
             let direccion = direcciones.choose(&mut thread_rng()).unwrap();
@@ -66,7 +138,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_empleadores(&empleadores, &pool).await?;
-    println!("Se han cargado todos los empleadores correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Empleadores".green());
 
     let profesores: Vec<Profesores> = (1..=muestras)
         .map(|_| {
@@ -75,7 +147,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_profesores(&profesores, &pool).await?;
-    println!("Se han cargado todos los profesores correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Profesores".green());
 
     let contactos: Vec<Contactos> = (1..=muestras)
         .map(|_| {
@@ -83,31 +155,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Contactos::new(profesor)
         })
         .collect();
-
     cargar_contactos(&contactos, &pool).await?;
-    println!("Se han cargado todos los contactos correctamente!");
-
-    let idiomas: Vec<Idiomas> = (1..=muestras).map(|_| Idiomas::new()).collect();
-    cargar_idiomas(&idiomas, &pool).await?;
-    println!("Se han cargado todos los idiomas correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Contactos".green());
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
-    println!("Se han cargado todos los conoce_idiomas correctamente!");
-
-    let titulos: Vec<Titulos> = (1..=muestras).map(|_| Titulos::new()).collect();
-    cargar_titulos(&titulos, &pool).await?;
-    println!("Se han cargado todos los titulos correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "ConoceIdiomas".green());
 
     cargar_posee_titulo(&titulos, &profesores, &pool).await?;
-    println!("Se han cargado todos los posee_titulos correctamente!");
-
-    let cursos_conferencias: Vec<CursoOConferencia> =
-        (1..=muestras).map(|_| CursoOConferencia::new()).collect();
-    cargar_cur_conf(&cursos_conferencias, &pool).await?;
-    println!("Se han cargado todos los cursos o conferencias correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "PoseeTitulos".green());
 
     cargar_atendio_a(&cursos_conferencias, &profesores, &pool).await?;
-    println!("Se han cargado todos los atendio_a correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "AtendioA".green());
 
     let antecedentes_docentes: Vec<AntecedentesDocentes> = (1..=muestras)
         .map(|_| {
@@ -116,25 +174,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_antecedentes_docentes(&antecedentes_docentes, &pool).await?;
-    println!("Se han cargado todos los antecedentes docentes correctamente!");
-
-    let actividades_investigacion: Vec<ActividadesInvestigacion> = (1..=muestras)
-        .map(|_| ActividadesInvestigacion::new())
-        .collect();
-    cargar_actividades_investigacion(&actividades_investigacion, &pool).await?;
-    println!("Se han cargado todas las actividades de investigacion correctamente!");
+    eprintln!(
+        "Se ha cargado {} docentes correctamente!",
+        "antecedentes ".green()
+    );
 
     cargar_participa_en_investigacion(&actividades_investigacion, &profesores, &pool).await?;
-    println!("Se han cargado todas las actividades de investigacion correctamente!");
-
-    let actividad_universitaria: Vec<ActividadesExtensionUniversitaria> = (1..=muestras)
-        .map(|_| ActividadesExtensionUniversitaria::new())
-        .collect();
-    cargar_actividad_universitaria(&actividad_universitaria, &pool).await?;
-    println!("Se han cargado todas las actividades universitarias correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ParticipaEnInvestigacion".green()
+    );
 
     cargar_realizo_actividad(&actividad_universitaria, &profesores, &pool).await?;
-    println!("Se han cargado todas las realizo actividad correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "RealizoActividad ".green()
+    );
 
     let antecedentes_profesonales: Vec<AntecedentesProfesionales> = (1..=muestras)
         .map(|_| {
@@ -143,26 +198,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_antecedentes_profesionales(&antecedentes_profesonales, &pool).await?;
-    println!("Se han cargado todos los antecedentes profesionales correctamente!");
-
-    let publicaciones: Vec<Publicaciones> = (1..=muestras).map(|_| Publicaciones::new()).collect();
-    cargar_publicaciones(&publicaciones, &pool).await?;
-    println!("Se han cargado todas las publicaciones correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "AntecedentesProfesionales".green()
+    );
 
     cargar_referencias_bibliograficas(&publicaciones, &pool).await?;
-    println!("Se han cargado todas las referencias bibliograficas correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ReferenciasBibliograficas".green()
+    );
 
     cargar_publico_publicaciones(&publicaciones, &profesores, &pool).await?;
-    println!("Se han cargado todas los publico publicacion correctamente!");
-
-    let reuniones: Vec<ReunionesCientificas> = (1..=muestras)
-        .map(|_| ReunionesCientificas::new())
-        .collect();
-    cargar_reuniones_cientificas(&reuniones, &pool).await?;
-    println!("Se han cargado todas las reuniones cientificas correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "PublicoPublicacion".green()
+    );
 
     cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
-    println!("Se han cargado todos los participo en reuniones cientificas correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "ParticipoEnReunion".green()
+    );
 
     let dependencias_empresas: Vec<DependenciasOEmpresas> = (1..=muestras)
         .map(|_| {
@@ -171,7 +228,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_dependencias_o_empresas(&dependencias_empresas, &pool).await?;
-    println!("Se han cargado todas las dependencias o empresas correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "DependenciasOEmpresas".green()
+    );
 
     let beneficiarios: Vec<Beneficiarios> = (1..=muestras)
         .map(|_| {
@@ -180,7 +240,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_beneficiarios(&beneficiarios, &pool).await?;
-    println!("Se han cargado todos los beneficiarios correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Beneficiarios".green());
 
     let obras_sociales: Vec<ObrasSociales> = (1..=muestras)
         .map(|_| {
@@ -194,14 +254,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_obras_sociales(&obras_sociales, &pool).await?;
-    println!("Se han cargado todas las entradas a la obra social correctamente!");
-
-    let percepciones: Vec<Percepciones> = (1..=muestras).map(|_| Percepciones::new()).collect();
-    cargar_percepciones(&percepciones, &pool).await?;
-    println!("Se han cargado todas las percepciones correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "ObrasSociales".green());
 
     cargar_percibe_en(&percepciones, &profesores, &pool).await?;
-    println!("Se han cargado todos los percibe en correctamente!");
+    eprintln!("Se ha cargado {} en correctamente!", "Percibe".green());
 
     let declaraciones_juradas: Vec<DeclaracionesJuradas> = (1..=muestras)
         .map(|_| {
@@ -210,7 +266,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_declaraciones_juradas(&declaraciones_juradas, &pool).await?;
-    println!("Se han cargado todas las declaraciones juradas correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "DeclaracionesJuradas".green()
+    );
 
     let declaraciones_de_cargo: Vec<DeclaracionesDeCargo> = (1..=muestras)
         .map(|_| {
@@ -219,7 +278,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_declaraciones_cargo(&declaraciones_de_cargo, &pool).await?;
-    println!("Se han cargado todas las declaraciones de cargo correctamente!");
+    eprintln!(
+        "Se ha cargado {} correctamente!",
+        "DeclaracionesDeCargo".green()
+    );
 
     let horarios: Vec<Horarios> = (1..=muestras)
         .map(|_| {
@@ -228,20 +290,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     cargar_horarios(&horarios, &pool).await?;
-    println!("Se han cargado todos los horarios correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "Horarios".green());
 
     cargar_cumple_cargo(&profesores, &declaraciones_de_cargo, &pool).await?;
-    println!("Se han cargado todos los cumple cargo correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "CumpleCargo".green());
 
     cargar_reside_en(&profesores, &direcciones, &pool).await?;
-    println!("Se han cargado todos los reside en correctamente!");
-
-    let seguros: Vec<Seguros> = (1..=muestras).map(|_| Seguros::new()).collect();
-    cargar_seguros(&seguros, &pool).await?;
-    println!("Se han cargado todos los seguros correctamente!");
+    eprintln!("Se ha cargado {} correctamente!", "ResideEn".green());
 
     cargar_asegura_a(&profesores, &seguros, &beneficiarios, &pool).await?;
-    println!("Se han cargado todos los asegura a correctamente!");
+    eprintln!("Se ha cargado {} a correctamente!", "AseguraA".green());
     Ok(())
 }
 
@@ -834,7 +892,7 @@ async fn cargar_realizo_actividad(
         } else {
             None
         };
-        let dedicacion = rng.gen_range(1..8);
+        let _dedicacion = rng.gen_range(1..8);
 
         //FIXME: Revisar por qué considera que Dedicacion no es parte de la tabla.
         match sqlx::query!(
@@ -1113,40 +1171,6 @@ async fn cargar_titulos(titulos: &[Titulos], pool: &Pool<MySql>) -> Result<(), B
         {
             Ok(_) => continue,
             Err(err) => {
-                println!("Error: {}", err);
-                continue;
-            }
-        };
-    }
-    Ok(())
-}
-
-async fn cargar_conoce_idiomas(
-    idiomas: &[Idiomas],
-    profesores: &[Profesores],
-    pool: &Pool<MySql>,
-) -> Result<(), Box<dyn Error>> {
-    for prof in profesores {
-        let idioma = idiomas.choose(&mut thread_rng()).unwrap().0.clone();
-        let certificacion: String = Word().fake();
-        let institucion: String = Word().fake();
-        let nivel: String = Word().fake();
-        match sqlx::query!(
-            r#"
-            insert into ConoceIdioma (DNIProfesor, NombreIdioma, Certificacion, Institucion, Nivel)
-            values (?,?,?,?,?)
-            "#,
-            prof.dni,
-            idioma,
-            certificacion,
-            institucion,
-            nivel
-        )
-        .execute(pool)
-        .await
-        {
-            Ok(_) => continue,
-            Err(err) => {
                 eprintln!("Error: {}", err);
                 continue;
             }
@@ -1155,7 +1179,44 @@ async fn cargar_conoce_idiomas(
     Ok(())
 }
 
-async fn cargar_idiomas(idiomas: &[Idiomas], pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
+async fn cargar_conoce_idiomas(
+    idiomas: &[&str],
+    profesores: &[Profesores],
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    for prof in profesores {
+        // FIXME: Encontrar una mejor manera de que cada profesor conozca al menos dos idiomas.
+        for _ in 1..=thread_rng().gen_range(1..3) {
+            let idioma = idiomas.choose(&mut thread_rng()).unwrap();
+            let certificacion: String = Word().fake();
+            let institucion: String = Word().fake();
+            let nivel: String = Word().fake();
+            match sqlx::query!(
+                r#"
+            insert into ConoceIdioma (DNIProfesor, NombreIdioma, Certificacion, Institucion, Nivel)
+            values (?,?,?,?,?)
+            "#,
+                prof.dni,
+                idioma,
+                certificacion,
+                institucion,
+                nivel
+            )
+            .execute(pool)
+            .await
+            {
+                Ok(_) => continue,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    continue;
+                }
+            };
+        }
+    }
+    Ok(())
+}
+
+async fn cargar_idiomas(idiomas: &[&str], pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
     let row_count: i64 = sqlx::query_scalar("select count(*) FROM Idiomas")
         .fetch_one(pool)
         .await?;
@@ -1166,14 +1227,14 @@ async fn cargar_idiomas(idiomas: &[Idiomas], pool: &Pool<MySql>) -> Result<(), B
                 r#"
             insert into Idiomas (Nombre) values (?)
             "#,
-                i.0
+                i
             )
             .execute(pool)
             .await
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    println!("Error: {}", err);
+                    eprintln!("Error: {}", err);
                     continue;
                 }
             };
@@ -1206,7 +1267,7 @@ async fn cargar_contactos(
         {
             Ok(_) => continue,
             Err(err) => {
-                println!("Error: {}", err);
+                eprintln!("Error: {}", err);
                 continue;
             }
         };
@@ -1244,7 +1305,7 @@ async fn cargar_profesores(
         {
             Ok(_) => continue,
             Err(err) => {
-                println!("Error: {}", err);
+                eprintln!("Error: {}", err);
                 continue;
             }
         };
@@ -1272,7 +1333,7 @@ values (?,?,?,?,?,?,?)"#,
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    println!("Error: {}", err);
+                    eprintln!("Error: {}", err);
                     continue;
                 }
             };
@@ -1298,10 +1359,11 @@ values (?,?,?,?,?)"#,
         {
             Ok(_) => continue,
             Err(err) => {
-                println!("Error: {}", err);
+                eprintln!("Error: {}", err);
                 continue;
             }
         };
     }
+
     Ok(())
 }

@@ -8,7 +8,7 @@ use fake::faker::{
     lorem::en::*,
     name::en::*,
     phone_number::en::{CellNumber, PhoneNumber},
-    time::en::Date,
+    time::en::{Date, Time},
 };
 use fake::Fake;
 use rand::{
@@ -91,12 +91,13 @@ impl Contactos {
             .choose(&mut thread_rng())
             .unwrap()
             .to_string();
+
         // FIXME: Revisar por qué a veces el tipo es Email pero no se le asigna un mail.
         let direccion = match tipo.as_str() {
             "Email" => SafeEmail().fake(),
             _ => None,
         };
-        let numero: Option<String> = match tipo.as_str() {
+        let numero = match tipo.as_str() {
             "Telefono" => PhoneNumber().fake(),
             "Celular" => CellNumber().fake(),
             _ => None,
@@ -112,25 +113,25 @@ impl Contactos {
     }
 }
 
-pub struct Idiomas(pub String);
-
-impl Idiomas {
-    pub fn new() -> Self {
-        let idioma = [
-            "Inglés",
-            "Español",
-            "Portugues",
-            "Mandarín",
-            "Japones",
-            "Italiano",
-        ]
-        .choose(&mut thread_rng())
-        .unwrap()
-        .to_string();
-
-        Self(idioma)
-    }
-}
+//pub struct Idiomas(pub String);
+//
+//impl Idiomas {
+//    pub fn new() -> Self {
+//        let idioma = [
+//            "Inglés",
+//            "Español",
+//            "Portugues",
+//            "Mandarín",
+//            "Japones",
+//            "Italiano",
+//        ]
+//        .choose(&mut thread_rng())
+//        .unwrap()
+//        .to_string();
+//
+//        Self(idioma)
+//    }
+//}
 
 //FIXME: struct ConoceIdioma?
 
@@ -142,9 +143,9 @@ pub struct Titulos {
 impl Titulos {
     pub fn new() -> Self {
         Self {
-            institucion: Word().fake(),
+            institucion: Words(1..5).fake::<Vec<String>>().join(" "),
             nivel: Word().fake(),
-            titulo: Word().fake(),
+            titulo: Words(1..5).fake::<Vec<String>>().join(" "),
         }
     }
 }
@@ -164,8 +165,7 @@ impl CursoOConferencia {
         let institucion: String = Word().fake();
         let mut rng = thread_rng();
         let descripcion = if rng.gen::<bool>() {
-            let aux: Vec<String> = Words(1..20).fake();
-            Some(aux.join(" "))
+            Some(Words(1..20).fake::<Vec<String>>().join(" "))
         } else {
             None
         };
@@ -309,14 +309,14 @@ impl Publicaciones {
     pub fn new() -> Self {
         let mut rng = thread_rng();
         let id_publicacion = rng.gen();
-        let aux: Vec<String> = (1..rng.gen_range(2..5))
+        let autores = (1..rng.gen_range(2..5))
             .map(|_| {
                 let nombre: String = FirstName().fake();
                 let apellido: String = LastName().fake();
                 format!("{apellido}, {nombre}")
             })
-            .collect();
-        let autores = aux.join("; ");
+            .collect::<Vec<String>>()
+            .join("; ");
         let anio = rng.gen_range(1901..2155);
         let titulo: String = Word().fake();
 
@@ -336,8 +336,7 @@ pub struct ReunionesCientificas {
 
 impl ReunionesCientificas {
     pub fn new() -> Self {
-        let aux: Vec<String> = Words(1..5).fake();
-        let titulo = aux.join(" ");
+        let titulo = Words(1..5).fake::<Vec<String>>().join(" ");
         Self {
             titulo,
             fecha: Date().fake(),
@@ -371,8 +370,7 @@ impl DependenciasOEmpresas {
             .unwrap()
             .to_string();
         let obra_social = Word().fake();
-        let aux: Vec<String> = Words(1..20).fake();
-        let observacion = aux.join(" ");
+        let observacion = Words(1..20).fake::<Vec<String>>().join(" ");
         let naturaleza_juridica = ["Privado", "Publico"]
             .choose(&mut thread_rng())
             .unwrap()
@@ -442,10 +440,10 @@ pub struct Percepciones {
 impl Percepciones {
     pub fn new() -> Self {
         Self {
-            institucion_caja: Word().fake(),
-            tipo: Word().fake(),
+            institucion_caja: Words(1..10).fake::<Vec<String>>().join(" "),
+            tipo: Words(1..3).fake::<Vec<String>>().join(" "),
             regimen: Word().fake(),
-            causa: Word().fake(),
+            causa: Words(1..5).fake::<Vec<String>>().join(" "),
         }
     }
 }
@@ -486,10 +484,10 @@ pub struct Direcciones {
 
 impl Distribution<Direcciones> for Standard {
     fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Direcciones {
-        let aux: String = BuildingNumber().fake();
-        let numero = aux
+        let numero = BuildingNumber()
+            .fake::<String>()
             .parse()
-            .expect("Fallo en transforma de String a u32 'BuildingNumber()'");
+            .expect("Fallo en transformar  String a u32 'BuildingNumber()'");
 
         let calle = StreetName().fake();
         let codigo_postal = rng.gen_range(1000..10000);
@@ -561,8 +559,8 @@ impl Horarios {
             .unwrap()
             .to_string();
         // FIXME: Generar rangos horarios;
-        let rango_horario = Word().fake();
-        let nombre_catedra = Word().fake();
+        let rango_horario = generar_rangos_horarios();
+        let nombre_catedra = Words(1..5).fake::<Vec<String>>().join(" ");
         Self {
             id_declaracion,
             dia,
@@ -728,4 +726,10 @@ impl DNI {
         let digits: BigInt = rng.gen_range(10000000..100000000).into();
         BigDecimal::new(digits, 0)
     }
+}
+
+fn generar_rangos_horarios() -> String {
+    let tiempo_comienzo: String = Time().fake();
+    let tiempo_fin: String = Time().fake();
+    format!("{tiempo_comienzo} - {tiempo_fin}")
 }

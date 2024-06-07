@@ -24,7 +24,7 @@ CREATE TABLE Contactos (
     Tipo enum('Celular', 'Telefono', 'Email'),
     Direccion varchar(100),
     Medio enum('Personal', 'Empresarial', 'Otro'),
-    Numero varchar(20),
+    Numero varchar(30),
     PRIMARY KEY (DNIProfesor, Tipo, Medio),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
     UPDATE
@@ -50,7 +50,7 @@ CREATE TABLE ConoceIdioma (
 CREATE TABLE Titulos (
     Institucion varchar(50),
     Nivel varchar(50),
-    Titulo varchar(50),
+    Titulo varchar(100),
     PRIMARY KEY (Institucion, Nivel, Titulo)
 );
 
