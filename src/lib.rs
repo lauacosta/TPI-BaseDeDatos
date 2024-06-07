@@ -1,9 +1,15 @@
 #![allow(dead_code)]
 
 use bigdecimal::num_bigint::BigInt;
-use fake::faker::address::en::*;
-use fake::faker::name::en::*;
-use fake::faker::time::en::Date;
+use fake::faker::{
+    address::en::*,
+    company::en::CompanyName,
+    internet::en::SafeEmail,
+    lorem::en::*,
+    name::en::*,
+    phone_number::en::{CellNumber, PhoneNumber},
+    time::en::Date,
+};
 use fake::Fake;
 use rand::{
     distributions::{Distribution, Standard},
@@ -11,6 +17,7 @@ use rand::{
     thread_rng, Rng,
 };
 use sqlx::types::{time::Date, BigDecimal};
+use time::Duration;
 
 #[derive(Debug)]
 pub struct Profesores {
@@ -65,77 +72,261 @@ impl Profesores {
 }
 
 pub struct Contactos {
-    dni_profesor: BigDecimal, //FIXME: FK de Profesores
-    tipo: String,             // ('Celular', 'Telefono', 'Email')
-    medio: String,            // ('Personal', 'Empresarial', 'Otro')
-    direccion: Option<String>,
-    numero: Option<u32>,
+    pub dni_profesor: BigDecimal, //FIXME: FK de Profesores
+    pub tipo: String,             // ('Celular', 'Telefono', 'Email')
+    pub medio: String,            // ('Personal', 'Empresarial', 'Otro')
+    pub direccion: Option<String>,
+    pub numero: Option<String>,
 }
 
-pub struct Idiomas(String);
+impl Contactos {
+    pub fn new(profesor: &Profesores) -> Self {
+        let dni_profesor = profesor.dni.clone();
+        let tipo = ["Celular", "Telefono", "Email"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+
+        let medio = ["Personal", "Empresarial", "Otro"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        // FIXME: Revisar por qué a veces el tipo es Email pero no se le asigna un mail.
+        let direccion = match tipo.as_str() {
+            "Email" => SafeEmail().fake(),
+            _ => None,
+        };
+        let numero: Option<String> = match tipo.as_str() {
+            "Telefono" => PhoneNumber().fake(),
+            "Celular" => CellNumber().fake(),
+            _ => None,
+        };
+
+        Self {
+            dni_profesor,
+            tipo,
+            medio,
+            direccion,
+            numero,
+        }
+    }
+}
+
+pub struct Idiomas(pub String);
+
+impl Idiomas {
+    pub fn new() -> Self {
+        let idioma = [
+            "Inglés",
+            "Español",
+            "Portugues",
+            "Mandarín",
+            "Japones",
+            "Italiano",
+        ]
+        .choose(&mut thread_rng())
+        .unwrap()
+        .to_string();
+
+        Self(idioma)
+    }
+}
 
 //FIXME: struct ConoceIdioma?
 
 pub struct Titulos {
-    institucion: String,
-    nivel: String,
-    titulo: String,
+    pub institucion: String,
+    pub nivel: String,
+    pub titulo: String,
+}
+impl Titulos {
+    pub fn new() -> Self {
+        Self {
+            institucion: Word().fake(),
+            nivel: Word().fake(),
+            titulo: Word().fake(),
+        }
+    }
 }
 
 //FIXME: struct PoseeTitulo?
 
 pub struct CursoOConferencia {
-    nombre: String,
-    institucion: String,
-    descripcion: Option<String>,
-    tipo: String, // ('Curso', 'Conferencia')
+    pub nombre: String,
+    pub institucion: String,
+    pub descripcion: Option<String>,
+    pub tipo: String, // ('Curso', 'Conferencia')
+}
+
+impl CursoOConferencia {
+    pub fn new() -> Self {
+        let nombre: String = Name().fake();
+        let institucion: String = Word().fake();
+        let mut rng = thread_rng();
+        let descripcion = if rng.gen::<bool>() {
+            let aux: Vec<String> = Words(1..20).fake();
+            Some(aux.join(" "))
+        } else {
+            None
+        };
+        let tipo = ["Curso", "Conferencia"]
+            .choose(&mut thread_rng())
+            .unwrap()
+            .to_string();
+        Self {
+            nombre,
+            institucion,
+            descripcion,
+            tipo,
+        }
+    }
 }
 
 //FIXME: struct AtendioA?
 
 pub struct AntecedentesDocentes {
-    institucion: String,
-    unidad_academica: String,
-    cargo: String,
-    desde: Date,
-    hasta: Option<Date>,
-    dedicacion: Option<u32>,
-    dni_profesor: BigDecimal, // FIXME: FK de Profesores
+    pub institucion: String,
+    pub unidad_academica: String,
+    pub cargo: String,
+    pub desde: Date,
+    pub hasta: Option<Date>,
+    pub dedicacion: u32,
+    pub dni_profesor: BigDecimal, // FIXME: FK de Profesores
+}
+
+impl AntecedentesDocentes {
+    pub fn new(profesor: &Profesores) -> Self {
+        let mut rng = thread_rng();
+        let institucion = Word().fake();
+        let unidad_academica = Word().fake();
+        let cargo = Word().fake();
+        let dni_profesor = profesor.dni.clone();
+        let desde = Date().fake();
+        let hasta = if rng.gen::<bool>() {
+            Some(desde + Duration::days(365))
+        } else {
+            None
+        };
+        let dedicacion = rng.gen_range(1..8);
+
+        Self {
+            institucion,
+            unidad_academica,
+            cargo,
+            desde,
+            hasta,
+            dedicacion,
+            dni_profesor,
+        }
+    }
 }
 
 pub struct ActividadesInvestigacion {
-    id_investigacion: u32,
-    institucion: String,
-    categoria: String,
-    area_ppal: String,
+    pub id_investigacion: u32,
+    pub institucion: String,
+    pub categoria: String,
+    pub area_ppal: String,
+}
+
+impl ActividadesInvestigacion {
+    pub fn new() -> Self {
+        let id_investigacion = thread_rng().gen();
+        let institucion = Word().fake();
+        let categoria = Word().fake();
+        let area_ppal = Word().fake();
+        Self {
+            id_investigacion,
+            institucion,
+            categoria,
+            area_ppal,
+        }
+    }
 }
 
 //FIXME: struct ParticipaEnInvestigacion?
 
 pub struct ActividadesExtensionUniversitaria {
-    id_actividad: u32,
-    institucion: String,
-    cargo: String,
-    categoria: String,
+    pub id_actividad: u32,
+    pub institucion: String,
+    pub cargo: String,
+    pub categoria: String,
+}
+
+impl ActividadesExtensionUniversitaria {
+    pub fn new() -> Self {
+        let id_actividad = thread_rng().gen();
+        let institucion = Word().fake();
+        let cargo = Word().fake();
+        let categoria = Word().fake();
+        Self {
+            id_actividad,
+            institucion,
+            cargo,
+            categoria,
+        }
+    }
 }
 
 //FIXME: struct RealizoActividad?
 
 pub struct AntecedentesProfesionales {
-    dni_profesor: BigDecimal, //FIXME: FK de Profesores
-    cargo: String,
-    empresa: String,
-    tipo_actividad: String,
-    desde: Option<Date>,
-    hasta: Option<Date>,
+    pub dni_profesor: BigDecimal, //FIXME: FK de Profesores
+    pub cargo: String,
+    pub empresa: String,
+    pub tipo_actividad: String,
+    pub desde: Date,
+    pub hasta: Date,
+}
+
+impl AntecedentesProfesionales {
+    pub fn new(profesor: &Profesores) -> Self {
+        let dni_profesor = profesor.dni.clone();
+        let cargo = Word().fake();
+        let empresa = CompanyName().fake();
+        let tipo_actividad = Word().fake();
+        let desde = Date().fake();
+        let hasta = desde + Duration::days(365 * thread_rng().gen_range(1..5));
+        Self {
+            dni_profesor,
+            cargo,
+            empresa,
+            tipo_actividad,
+            desde,
+            hasta,
+        }
+    }
 }
 
 pub struct Publicaciones {
-    id_publicacion: u32,
-    autores: String,
+    pub id_publicacion: u32,
+    pub autores: String,
     // FIXME: Tengo que extraer el año de esta fecha
-    anio: Date,
-    titulo: String,
+    pub anio: i32,
+    pub titulo: String,
+}
+
+impl Publicaciones {
+    pub fn new() -> Self {
+        let mut rng = thread_rng();
+        let id_publicacion = rng.gen();
+        let aux: Vec<String> = (1..rng.gen_range(2..5))
+            .map(|_| {
+                let nombre: String = FirstName().fake();
+                let apellido: String = LastName().fake();
+                format!("{apellido}, {nombre}")
+            })
+            .collect();
+        let autores = aux.join("; ");
+        let anio = rng.gen_range(1901..2155);
+        let titulo: String = Word().fake();
+
+        Self {
+            id_publicacion,
+            autores,
+            anio,
+            titulo,
+        }
+    }
 }
 
 //FIXME: struct ReferenciaBibligrafica?

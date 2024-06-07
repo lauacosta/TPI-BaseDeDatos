@@ -1,10 +1,10 @@
 -- Add migration script here
 CREATE TABLE Profesores (
     DNI DECIMAL(8),
-    Nombre varchar(50) NOT NULL,
-    Apellido varchar(50) NOT NULL,
+    Nombre varchar(100) NOT NULL,
+    Apellido varchar(100) NOT NULL,
     FechaNacimiento date NOT NULL,
-    Nacionalidad varchar(50) NOT NULL,
+    Nacionalidad varchar(100) NOT NULL,
     EstadoCivil enum(
         'Soltero/a',
         'Casado/a',
@@ -12,7 +12,7 @@ CREATE TABLE Profesores (
         'Viudo/a',
         'Conviviente'
     ) NOT NULL,
-    Sexo enum('H', 'M') NOT NULL,
+    Sexo enum('M', 'F') NOT NULL,
     CUIT DECIMAL(11) NOT NULL,
     CUIL DECIMAL(11) NOT NULL,
     CUITEmpleador DECIMAL(11) NOT NULL,
@@ -22,9 +22,9 @@ CREATE TABLE Profesores (
 CREATE TABLE Contactos (
     DNIProfesor DECIMAL(8),
     Tipo enum('Celular', 'Telefono', 'Email'),
-    Direccion varchar(50),
+    Direccion varchar(100),
     Medio enum('Personal', 'Empresarial', 'Otro'),
-    Numero int unsigned,
+    Numero varchar(20),
     PRIMARY KEY (DNIProfesor, Tipo, Medio),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
     UPDATE
@@ -91,7 +91,7 @@ CREATE TABLE AntecedentesDocentes (
     Cargo varchar(50),
     Desde date NOT NULL,
     Hasta date,
-    Dedicacion int unsigned,
+    Dedicacion int unsigned NOT NULL,
     DNIProfesor decimal(8),
     PRIMARY KEY (DNIProfesor, Institucion, Cargo, UnidadAcademica),
     FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
@@ -130,7 +130,7 @@ CREATE TABLE RealizoActividad(
     IDActividad int unsigned,
     DNIProfesor DECIMAL(8),
     Acciones varchar(50),
-    Dedidacion int,
+    Dedidacion int unsigned,
     Hasta date,
     Desde date,
     PRIMARY KEY (DNIProfesor, IDActividad),
