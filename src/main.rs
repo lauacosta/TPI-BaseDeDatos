@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = MySqlPoolOptions::new().connect(&db_url).await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 1_000;
+    let muestras = 3;
 
     // Primero aquellas tablas que no tienen FK.
     let idiomas = [
@@ -69,62 +69,81 @@ async fn main() -> Result<(), Box<dyn Error>> {
     cargar_idiomas(&idiomas, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
 
-    let direcciones: Vec<Direcciones> = gen_tablas(100_000);
-    cargar_direcciones(&direcciones, &pool).await?;
+    let direcciones: Vec<Direcciones> = gen_tablas(muestras);
+    for d in direcciones.iter() {
+        d.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Direcciones".green());
 
     let titulos: Vec<Titulos> = gen_tablas(muestras);
-    cargar_titulos(&titulos, &pool).await?;
+    for i in titulos.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Titulos".green());
 
     let cur_conf: Vec<CursoOConferencia> = gen_tablas(muestras);
-    cargar_cur_conf(&cur_conf, &pool).await?;
+    for i in cur_conf.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "CursosOConferencia".green()
     );
 
     let act_inv: Vec<ActividadesInvestigacion> = gen_tablas(muestras);
-    cargar_actividades_investigacion(&act_inv, &pool).await?;
+    for i in act_inv.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "ActividadesInvestigacion".green()
     );
 
     let act_uni: Vec<ActividadesExtensionUniversitaria> = gen_tablas(muestras);
-    cargar_actividad_universitaria(&act_uni, &pool).await?;
+    for i in act_uni.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "ActividadesExtensionUniversitaria".green()
     );
 
     let publicaciones: Vec<Publicaciones> = gen_tablas(muestras);
-    cargar_publicaciones(&publicaciones, &pool).await?;
+    for i in publicaciones.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Publicaciones".green());
 
     let reuniones: Vec<ReunionesCientificas> = gen_tablas(muestras);
-    cargar_reuniones_cientificas(&reuniones, &pool).await?;
+    for i in reuniones.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "ReunionesCientificas".green()
     );
 
     let percepciones: Vec<Percepciones> = gen_tablas(muestras);
-    cargar_percepciones(&percepciones, &pool).await?;
+    for i in percepciones.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Percepciones".green());
 
     let seguros: Vec<Seguros> = gen_tablas(muestras);
-    cargar_seguros(&seguros, &pool).await?;
+    for i in seguros.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Seguros".green());
 
-    // Segundo, aquellas tablas que contienen FKs.
     let empleadores: Vec<Empleadores> = (1..=muestras)
         .map(|_| {
             let direccion = direcciones.choose(&mut thread_rng()).unwrap();
             Empleadores::new(direccion)
         })
         .collect();
-    cargar_empleadores(&empleadores, &pool).await?;
+    for i in empleadores.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Empleadores".green());
 
     let profesores: Vec<Profesores> = (1..=muestras)
@@ -133,7 +152,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Profesores::new(empleador)
         })
         .collect();
-    cargar_profesores(&profesores, &pool).await?;
+    for p in profesores.iter() {
+        p.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Profesores".green());
 
     let contactos: Vec<Contactos> = (1..=muestras)
@@ -142,7 +163,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Contactos::new(profesor)
         })
         .collect();
-    cargar_contactos(&contactos, &pool).await?;
+    for i in contactos.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Contactos".green());
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
@@ -160,7 +183,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             AntecedentesDocentes::new(profesor)
         })
         .collect();
-    cargar_antecedentes_docentes(&ant_doc, &pool).await?;
+    for i in ant_doc.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "AntecedentesDocentes".green()
@@ -184,7 +209,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             AntecedentesProfesionales::new(profesor)
         })
         .collect();
-    cargar_antecedentes_profesionales(&ant_pro, &pool).await?;
+    for i in ant_pro.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "AntecedentesProfesionales".green()
@@ -214,7 +241,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             DependenciasOEmpresas::new(profesor)
         })
         .collect();
-    cargar_dependencias_o_empresas(&dep_emp, &pool).await?;
+    for i in dep_emp.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "DependenciasOEmpresas".green()
@@ -226,7 +255,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Beneficiarios::new(direccion)
         })
         .collect();
-    cargar_beneficiarios(&beneficiarios, &pool).await?;
+    for i in beneficiarios.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Beneficiarios".green());
 
     let ob_social: Vec<ObrasSociales> = (1..=muestras)
@@ -240,7 +271,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ObrasSociales::new(profesor, beneficiario)
         })
         .collect();
-    cargar_obras_sociales(&ob_social, &pool).await?;
+    for i in ob_social.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "ObrasSociales".green());
 
     cargar_percibe_en(&percepciones, &profesores, &pool).await?;
@@ -252,7 +285,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             DeclaracionesJuradas::new(profesor)
         })
         .collect();
-    cargar_declaraciones_juradas(&dec_jur, &pool).await?;
+    for i in dec_jur.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "DeclaracionesJuradas".green()
@@ -264,7 +299,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             DeclaracionesDeCargo::new(direccion)
         })
         .collect();
-    cargar_declaraciones_cargo(&dec_car, &pool).await?;
+    for i in dec_car.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!(
         "Se ha cargado {} correctamente!",
         "DeclaracionesDeCargo".green()
@@ -273,10 +310,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let horarios: Vec<Horarios> = (1..=muestras)
         .map(|_| {
             let declaraciones = dec_car.choose(&mut thread_rng()).unwrap();
-            Horarios::new(&declaraciones)
+            Horarios::new(declaraciones)
         })
         .collect();
-    cargar_horarios(&horarios, &pool).await?;
+    for i in horarios.iter() {
+        i.insertar_en_db(&pool).await?;
+    }
     eprintln!("Se ha cargado {} correctamente!", "Horarios".green());
 
     cargar_cumple_cargo(&profesores, &dec_car, &pool).await?;
