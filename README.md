@@ -25,9 +25,10 @@ $ sqlx migrate run
 ## Build
 Para ejecutar el programa:
 ```
+// Podes ejecutarlo sin compilarlo haciendo:
 $ cargo run
 
-// Podes compilarlo haciendo:
+// Podes compilarlo y ejecutarlo haciendo:
 $ cargo build --release
 $ ./target/release/carga_datos
 ```
