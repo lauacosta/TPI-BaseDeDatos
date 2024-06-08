@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = MySqlPoolOptions::new().connect(&db_url).await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 10;
+    let muestras = 1_000;
 
     // Primero aquellas tablas que no tienen FK.
     let idiomas = [
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     cargar_idiomas(&idiomas, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
 
-    let direcciones: Vec<Direcciones> = gen_tablas(10);
+    let direcciones: Vec<Direcciones> = gen_tablas(1_000);
     cargar_direcciones(&direcciones, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Direcciones".green());
 
@@ -162,8 +162,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .collect();
     cargar_antecedentes_docentes(&ant_doc, &pool).await?;
     eprintln!(
-        "Se ha cargado {} docentes correctamente!",
-        "antecedentes ".green()
+        "Se ha cargado {} correctamente!",
+        "AntecedentesDocentes".green()
     );
 
     cargar_participa_en_investigacion(&act_inv, &profesores, &pool).await?;

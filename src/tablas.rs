@@ -441,12 +441,13 @@ impl Dummy<Faker> for Direcciones {
 
         let calle = StreetName().fake();
         let codigo_postal = rng.gen_range(1000..10000);
-        let localidad = if rng.gen::<bool>() {
+        let tiene_localidad_y_provincia = rng.gen::<bool>();
+        let localidad = if tiene_localidad_y_provincia {
             Some(CityName().fake())
         } else {
             None
         };
-        let provincia = if rng.gen::<bool>() {
+        let provincia = if tiene_localidad_y_provincia {
             Some(StateName().fake())
         } else {
             None
