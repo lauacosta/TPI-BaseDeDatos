@@ -1,4 +1,5 @@
 use bigdecimal::num_bigint::BigInt;
+use colored::Colorize;
 use fake::faker::{
     address::en::*,
     company::en::CompanyName,
@@ -18,9 +19,21 @@ use sqlx::{
 use std::error::Error;
 use time::Duration;
 
-pub fn gen_tablas<T: Dummy<Faker>>(muestras: u32) -> Vec<T> {
-    (1..=muestras).map(|_| Faker.fake()).collect()
+pub async fn cargar_tabla<T>(muestras: u32, pool: &Pool<MySql>) -> Result<Vec<T>, Box<dyn Error>>
+where
+    T: DBData + fake::Dummy<fake::Faker>,
+{
+    let tablas: Vec<T> = (1..=muestras).map(|_| Faker.fake()).collect();
+    for tabla in tablas.iter() {
+        tabla.insertar_en_db(pool).await?;
+    }
+    let nombre_tabla = std::any::type_name::<T>().rsplit("::").next().unwrap();
+    eprintln!("Se ha cargado {} correctamente!", nombre_tabla.green());
+    Ok(tablas)
 }
+//pub fn gen_tablas<T: Dummy<Faker>>(muestras: u32) -> Vec<T> {
+//    (1..=muestras).map(|_| Faker.fake()).collect()
+//}
 
 #[allow(async_fn_in_trait)]
 pub trait DBData {

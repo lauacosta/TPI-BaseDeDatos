@@ -1,5 +1,5 @@
 //#![allow(dead_code)]
-use crate::tablas::*;
+use crate::db_tablas::*;
 use fake::faker::lorem::en::*;
 use fake::faker::time::en::Date;
 use fake::Fake;

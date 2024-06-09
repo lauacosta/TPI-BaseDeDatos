@@ -1,2 +1,2 @@
-pub mod funciones_de_carga;
-pub mod tablas;
+pub mod db_cargasfk;
+pub mod db_tablas;

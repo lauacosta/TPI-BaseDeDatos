@@ -1,4 +1,4 @@
-use carga_datos::{funciones_de_carga::*, tablas::*};
+use carga_datos::{db_cargasfk::*, db_tablas::*};
 use colored::Colorize;
 use dotenv::dotenv;
 use rand::seq::SliceRandom;
@@ -69,71 +69,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     cargar_idiomas(&idiomas, &pool).await?;
     eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
 
-    let direcciones: Vec<Direcciones> = gen_tablas(muestras);
-    for d in direcciones.iter() {
-        d.insertar_en_db(&pool).await?;
-    }
-    eprintln!("Se ha cargado {} correctamente!", "Direcciones".green());
-
-    let titulos: Vec<Titulos> = gen_tablas(muestras);
-    for i in titulos.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!("Se ha cargado {} correctamente!", "Titulos".green());
-
-    let cur_conf: Vec<CursoOConferencia> = gen_tablas(muestras);
-    for i in cur_conf.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!(
-        "Se ha cargado {} correctamente!",
-        "CursosOConferencia".green()
-    );
-
-    let act_inv: Vec<ActividadesInvestigacion> = gen_tablas(muestras);
-    for i in act_inv.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ActividadesInvestigacion".green()
-    );
-
-    let act_uni: Vec<ActividadesExtensionUniversitaria> = gen_tablas(muestras);
-    for i in act_uni.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ActividadesExtensionUniversitaria".green()
-    );
-
-    let publicaciones: Vec<Publicaciones> = gen_tablas(muestras);
-    for i in publicaciones.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!("Se ha cargado {} correctamente!", "Publicaciones".green());
-
-    let reuniones: Vec<ReunionesCientificas> = gen_tablas(muestras);
-    for i in reuniones.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ReunionesCientificas".green()
-    );
-
-    let percepciones: Vec<Percepciones> = gen_tablas(muestras);
-    for i in percepciones.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!("Se ha cargado {} correctamente!", "Percepciones".green());
-
-    let seguros: Vec<Seguros> = gen_tablas(muestras);
-    for i in seguros.iter() {
-        i.insertar_en_db(&pool).await?;
-    }
-    eprintln!("Se ha cargado {} correctamente!", "Seguros".green());
+    let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
+    let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
+    let cur_conf = cargar_tabla::<CursoOConferencia>(muestras, &pool).await?;
+    let act_inv = cargar_tabla::<ActividadesInvestigacion>(muestras, &pool).await?;
+    let act_uni = cargar_tabla::<ActividadesExtensionUniversitaria>(muestras, &pool).await?;
+    let publicaciones = cargar_tabla::<Publicaciones>(muestras, &pool).await?;
+    let reuniones = cargar_tabla::<ReunionesCientificas>(muestras, &pool).await?;
+    let percepciones = cargar_tabla::<Percepciones>(muestras, &pool).await?;
+    let seguros = cargar_tabla::<Seguros>(muestras, &pool).await?;
 
     let empleadores: Vec<Empleadores> = (1..=muestras)
         .map(|_| {
