@@ -1,10 +1,11 @@
 use carga_datos::{db_cargasfk::*, db_tablas::*};
 use colored::Colorize;
-use dotenv::dotenv;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
 use sqlx::mysql::MySqlPoolOptions;
+use sqlx::MySql;
+use sqlx::Pool;
 use std::error::Error;
 
 /* Orden de carga hasta ahora:
@@ -49,15 +50,13 @@ Primero aquellas tablas que no tienen FKs.
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    dotenv().ok();
-    let db_url =
-        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
-    let pool = MySqlPoolOptions::new().connect(&db_url).await?;
+    let pool = conectar_con_bd().await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 3;
+    let muestras = 1_000;
 
     // Primero aquellas tablas que no tienen FK.
+    // FIXME: Corregir las colisiones contra la bd?
     let idiomas = [
         "Inglés",
         "Español",
@@ -271,4 +270,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     cargar_asegura_a(&profesores, &seguros, &beneficiarios, &pool).await?;
     eprintln!("Se ha cargado {} a correctamente!", "AseguraA".green());
     Ok(())
+}
+
+async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
+    dotenvy::dotenv()?;
+    let db_url =
+        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
+    Ok(MySqlPoolOptions::new().connect(&db_url).await?)
 }

@@ -1,4 +1,3 @@
-use bigdecimal::num_bigint::BigInt;
 use colored::Colorize;
 use fake::faker::{
     address::en::*,
@@ -13,7 +12,7 @@ use fake::Faker;
 use fake::{Dummy, Fake};
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use sqlx::{
-    types::{time::Date, BigDecimal},
+    types::{time::Date, BigDecimal, Type},
     MySql, Pool,
 };
 use std::error::Error;
@@ -31,9 +30,6 @@ where
     eprintln!("Se ha cargado {} correctamente!", nombre_tabla.green());
     Ok(tablas)
 }
-//pub fn gen_tablas<T: Dummy<Faker>>(muestras: u32) -> Vec<T> {
-//    (1..=muestras).map(|_| Faker.fake()).collect()
-//}
 
 #[allow(async_fn_in_trait)]
 pub trait DBData {
@@ -42,7 +38,7 @@ pub trait DBData {
 
 #[derive(Debug)]
 pub struct Profesores {
-    pub dni: BigDecimal,
+    pub dni: Dni,
     pub nombre: String,
     pub apellido: String,
     pub fecha_nacimiento: Date,
@@ -50,9 +46,9 @@ pub struct Profesores {
     //TODO: Evaluar si utilizo un enum o solamente al generar los valores los genero en base a un set.
     pub estado_civil: String, // ('Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente')
     pub sexo: String,         // ('M', 'F')
-    pub cuit: Option<BigDecimal>,
-    pub cuil: BigDecimal,
-    pub cuit_empleador: BigDecimal, //WARN: FK de Empleador
+    pub cuit: Option<Cuil>,
+    pub cuil: Cuil,
+    pub cuit_empleador: Cuil, //WARN: FK de Empleador
 }
 
 impl Profesores {
@@ -70,12 +66,12 @@ impl Profesores {
         .choose(&mut thread_rng())
         .unwrap()
         .to_string();
-        let sexo = ["M", "F"].choose(&mut thread_rng()).unwrap().to_string();
+        let sexo = ['M', 'F'].choose(&mut thread_rng()).unwrap().to_string();
         let fecha_nacimiento = Date().fake();
         let nacionalidad = CountryName().fake();
-        let cuil = Cuil::new();
+        let cuil = Cuil::new(&dni).unwrap();
         let cuit = if thread_rng().gen::<bool>() {
-            Some(Cuil::new())
+            Some(Cuil::new(&dni).unwrap())
         } else {
             None
         };
@@ -104,17 +100,16 @@ impl DBData for Profesores {
             
             insert into Profesores 
             (DNI, Nombre, Apellido, FechaNacimiento, Nacionalidad, EstadoCivil, Sexo, CUIT, CUIL, CUITEmpleador)
-            values (?,?,?,?,?,?,'M',?,?,?)
+            values (?,?,?,?,?,?,?,?,?,?)
 
             "#,
-            self.dni,
+            self.dni.0,
             self.nombre,
             self.apellido,
             self.fecha_nacimiento,
             self.nacionalidad,
             self.estado_civil,
-            // FIXME:: MySQL Error 0100 Data truncated in 'Sexo'
-            //self.sexo,
+            self.sexo,
             self.cuit,
             self.cuil,
             self.cuit_empleador
@@ -133,9 +128,9 @@ impl DBData for Profesores {
 }
 
 pub struct Contactos {
-    pub dni_profesor: BigDecimal, //WARN: FK de Profesores
-    pub tipo: String,             // ('Celular', 'Telefono', 'Email')
-    pub medio: String,            // ('Personal', 'Empresarial', 'Otro')
+    pub dni_profesor: Dni, //WARN: FK de Profesores
+    pub tipo: String,      // ('Celular', 'Telefono', 'Email')
+    pub medio: String,     // ('Personal', 'Empresarial', 'Otro')
     pub direccion: Option<String>,
     pub numero: Option<String>,
 }
@@ -153,14 +148,13 @@ impl Contactos {
             .unwrap()
             .to_string();
 
-        // FIXME: Revisar por qué a veces el tipo es Email pero no se le asigna un mail.
         let direccion = match tipo.as_str() {
-            "Email" => SafeEmail().fake(),
+            "Email" => Some(SafeEmail().fake()),
             _ => None,
         };
         let numero = match tipo.as_str() {
-            "Telefono" => PhoneNumber().fake(),
-            "Celular" => CellNumber().fake(),
+            "Telefono" => Some(PhoneNumber().fake()),
+            "Celular" => Some(CellNumber().fake()),
             _ => None,
         };
 
@@ -306,7 +300,7 @@ pub struct AntecedentesDocentes {
     pub desde: Date,
     pub hasta: Option<Date>,
     pub dedicacion: u32,
-    pub dni_profesor: BigDecimal, // WARN: FK de Profesores
+    pub dni_profesor: Dni, // WARN: FK de Profesores
 }
 
 impl AntecedentesDocentes {
@@ -436,7 +430,7 @@ impl DBData for ActividadesExtensionUniversitaria {
 }
 
 pub struct AntecedentesProfesionales {
-    pub dni_profesor: BigDecimal, //WARN: FK de Profesores
+    pub dni_profesor: Dni, //WARN: FK de Profesores
     pub cargo: String,
     pub empresa: String,
     pub tipo_actividad: String,
@@ -581,7 +575,7 @@ impl DBData for ReunionesCientificas {
 }
 
 pub struct DependenciasOEmpresas {
-    pub dni_profesor: BigDecimal, //WARN: FK de Profesores
+    pub dni_profesor: Dni, //WARN: FK de Profesores
     pub nombre: String,
     pub fecha_ingreso: Date,
     pub cargo: String,
@@ -656,8 +650,8 @@ impl DBData for DependenciasOEmpresas {
 
 pub struct ObrasSociales {
     pub id_obra_social: u32,
-    pub dni_profesor: BigDecimal, //WARN: FK de Profesores
-    pub dni_beneficiarios: Option<BigDecimal>,
+    pub dni_profesor: Dni, //WARN: FK de Profesores
+    pub dni_beneficiarios: Option<Dni>,
     pub tipo_personal: String, // ('No Docente', 'Docente', 'Contratado', 'Becario')
     pub tipo_caracter: String, // ('Titular', 'Suplente', 'Graduado', 'Estudiante', 'Interino')
     pub presta_servicios: bool,
@@ -767,7 +761,7 @@ impl DBData for Percepciones {
 
 pub struct DeclaracionesJuradas {
     pub id_declaracion: u32,
-    pub dni_profesor: BigDecimal, // WARN: FK de Profesores
+    pub dni_profesor: Dni, // WARN: FK de Profesores
     pub fecha: Date,
     pub lugar: String,
 }
@@ -992,7 +986,7 @@ impl DBData for Horarios {
 
 #[derive(Debug)]
 pub struct Empleadores {
-    pub cuit_cuil: BigDecimal,
+    pub cuit_cuil: Cuil,
     pub razon_social: String,
     pub piso: Option<u32>,
     pub departamento: Option<u8>,
@@ -1020,7 +1014,7 @@ impl Empleadores {
         };
 
         Self {
-            cuit_cuil: Cuil::new(),
+            cuit_cuil: Cuil(thread_rng().gen_range(1000000000..10000000000)),
             razon_social,
             piso,
             departamento,
@@ -1106,7 +1100,7 @@ impl DBData for Seguros {
 }
 
 pub struct Beneficiarios {
-    pub dni: BigDecimal,
+    pub dni: Dni,
     pub nombre: String,
     pub apellido: String,
     pub parentesco: String,
@@ -1208,24 +1202,25 @@ impl DBData for Beneficiarios {
     }
 }
 
-struct Cuil;
-
+#[derive(Debug, Clone, Type)]
+#[sqlx(transparent)]
+// https://servicioscf.afip.gob.ar/publico/abc/ABCpaso2.aspx?id_nivel1=3036&id_nivel2=3040&p=Conceptos%20b%C3%A1sicos
+pub struct Cuil(u64);
 impl Cuil {
-    fn new() -> BigDecimal {
-        let mut rng = rand::thread_rng();
-        //FIXME: VER COMO GENERAR NUMEROS de 11 cifras.
-        let digits: BigInt = rng.gen_range(100000000..1000000000).into();
-        BigDecimal::new(digits, 0)
+    fn new(dni: &Dni) -> Result<Self, Box<dyn Error>> {
+        let dni = dni.0.to_string();
+        let cuil: u64 = format!("20{dni}8").parse()?;
+        Ok(Self(cuil))
     }
 }
 
-struct Dni;
+#[derive(Debug, Clone, Type)]
+#[sqlx(transparent)]
+pub struct Dni(u64);
 
 impl Dni {
-    fn new() -> BigDecimal {
-        let mut rng = rand::thread_rng();
-        let digits: BigInt = rng.gen_range(10000000..100000000).into();
-        BigDecimal::new(digits, 0)
+    fn new() -> Self {
+        Self(thread_rng().gen_range(10000000..100000000))
     }
 }
 

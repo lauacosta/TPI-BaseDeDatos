@@ -1,6 +1,6 @@
 -- Add migration script here
 CREATE TABLE Profesores (
-	DNI DECIMAL(8),
+	DNI bigint unsigned,
 	Nombre varchar(100) NOT NULL,
 	Apellido varchar(100) NOT NULL,
 	FechaNacimiento date NOT NULL,
@@ -13,14 +13,14 @@ CREATE TABLE Profesores (
     	'Conviviente'
 	) NOT NULL,
 	Sexo enum('M', 'F') NOT NULL,
-	CUIT DECIMAL(11),
-	CUIL DECIMAL(11) NOT NULL,
-	CUITEmpleador DECIMAL(11) NOT NULL,
+	CUIT bigint unsigned,
+	CUIL bigint unsigned NOT NULL,
+	CUITEmpleador bigint unsigned NOT NULL,
 	PRIMARY KEY (DNI)
 );
 
 CREATE TABLE Contactos (
-	DNIProfesor DECIMAL(8),
+	DNIProfesor bigint unsigned,
 	Tipo enum('Celular', 'Telefono', 'Email'),
 	Direccion varchar(100),
 	Medio enum('Personal', 'Empresarial', 'Otro'),
@@ -37,7 +37,7 @@ CREATE TABLE Idiomas (
 );
 
 CREATE TABLE ConoceIdioma (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	NombreIdioma varchar(50),
 	Certificacion varchar(50) NOT NULL,
 	Institucion varchar(50) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE Titulos (
 );
 
 CREATE TABLE PoseeTitulo (
-	DNI decimal(8),
+	DNI bigint unsigned,
 	Institucion varchar(100),
 	Nivel varchar(50),
 	Titulo varchar(100),
@@ -77,7 +77,7 @@ CREATE TABLE CursosOConferencias (
 CREATE TABLE AtendioA (
 	Nombre varchar(50),
 	Institucion varchar(100),
-	DNI decimal(8),
+	DNI bigint unsigned,
 	Desde date NOT NULL,
 	Hasta date NOT NULL,
 	PRIMARY KEY (DNI, Nombre, Institucion),
@@ -92,7 +92,7 @@ CREATE TABLE AntecedentesDocentes (
 	Desde date NOT NULL,
 	Hasta date,
 	Dedicacion int unsigned NOT NULL,
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	PRIMARY KEY (DNIProfesor, Institucion, Cargo, UnidadAcademica),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) ON DELETE CASCADE ON
 	UPDATE
@@ -109,7 +109,7 @@ CREATE TABLE ActividadesInvestigacion (
 
 CREATE TABLE ParticipaEnInvestigacion (
 	IDInvestigacion int unsigned,
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	Desde date NOT NULL,
 	Hasta date,
 	Dedicacion int unsigned NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE ActividadesExtensionUniversitaria (
 
 CREATE TABLE RealizoActividad(
 	IDActividad int unsigned,
-	DNIProfesor DECIMAL(8),
+	DNIProfesor bigint unsigned,
 	Acciones varchar(50) NOT NULL,
 	Dedicacion int unsigned NOT NULL,
 	Hasta date NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE RealizoActividad(
 );
 
 CREATE TABLE AntecedentesProfesionales (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	Cargo varchar(50),
 	Empresa varchar(50),
 	TipoActividad varchar(50),
@@ -170,7 +170,7 @@ CREATE TABLE ReferenciaBibliografica (
 
 CREATE TABLE PublicoPublicacion(
 	IDPublicacion int unsigned,
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	PRIMARY KEY (IDPublicacion, DNIProfesor),
 	FOREIGN KEY (IDPublicacion) REFERENCES Publicaciones(IDPublicacion),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI)
@@ -183,7 +183,7 @@ CREATE TABLE ReunionesCientificas (
 );
 
 CREATE TABLE ParticipoEnReunion (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	Titulo varchar(50),
 	Fecha date,
 	Participacion varchar(50),
@@ -193,7 +193,7 @@ CREATE TABLE ParticipoEnReunion (
 );
 
 CREATE TABLE DependenciasOEmpresas (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	Nombre varchar(50),
 	FechaIngreso date,
 	Cargo varchar(50),
@@ -210,8 +210,8 @@ CREATE TABLE DependenciasOEmpresas (
 
 CREATE TABLE ObrasSociales (
 	IDObraSocial int unsigned,
-	DNIBeneficiarios decimal(8),
-	DNIProfesor decimal(8),
+	DNIBeneficiarios bigint unsigned,
+	DNIProfesor bigint unsigned,
 	-- FIXME: REVISAR SI ESTE ATRIBUTO HACE FALTA
 	TipoPersonal enum('No Docente', 'Docente', 'Contratado', 'Becario') NOT NULL,
 	TipoCaracter enum(
@@ -240,7 +240,7 @@ CREATE TABLE Percepciones (
 );
 
 CREATE TABLE PercibeEn (
-	DNI decimal(8),
+	DNI bigint unsigned,
 	InstitucionCaja varchar(100),
 	Tipo varchar(50),
 	EstadoPercepcion enum('Percibiendo', 'Suspendido') NOT NULL,
@@ -252,7 +252,7 @@ CREATE TABLE PercibeEn (
 
 CREATE TABLE DeclaracionesJuradas (
 	IDDeclaracion int unsigned,
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	Fecha date not null,
 	Lugar varchar(100) not null,
 	PRIMARY KEY (DNIProfesor, IDDeclaracion),
@@ -302,7 +302,7 @@ CREATE TABLE Horarios (
 );
 
 CREATE TABLE CumpleCargo (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	IDDeclaracion int unsigned,
 	PRIMARY KEY (DNIProfesor, IDDeclaracion),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI),
@@ -310,7 +310,7 @@ CREATE TABLE CumpleCargo (
 );
 
 CREATE TABLE Empleadores (
-	CUIT_CUIL decimal(11),
+	CUIT_CUIL bigint unsigned,
 	RazonSocial varchar(100),
 	CodigoPostal int unsigned NOT NULL,
 	Calle varchar(100) NOT NULL,
@@ -322,7 +322,7 @@ CREATE TABLE Empleadores (
 );
 
 CREATE TABLE ResideEn (
-	DNIProfesor decimal(8),
+	DNIProfesor bigint unsigned,
 	CodigoPostal int unsigned,
 	Calle varchar(100),
 	Numero int unsigned,
@@ -342,7 +342,7 @@ CREATE TABLE Seguros (
 );
 
 CREATE TABLE Beneficiarios (
-	DNI decimal(8),
+	DNI bigint unsigned,
 	Nombre varchar(50) NOT NULL,
 	Apellido varchar(50) NOT NULL,
 	Parentesco varchar (25) NOT NULL,
@@ -360,10 +360,10 @@ CREATE TABLE Beneficiarios (
 );
 
 CREATE TABLE AseguraA (
-	DNIProfesor decimal(8),
-	DNIBeneficiario decimal(8),
+	DNIProfesor bigint unsigned, 
+	DNIBeneficiario bigint unsigned,
 	CodigoCompania int unsigned,
-	CapitalAsegurado Numeric,
+	CapitalAsegurado decimal(10, 3),
 	FechaIngreso date,
 	PRIMARY KEY (DNIProfesor, CodigoCompania),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI),
