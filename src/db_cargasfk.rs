@@ -14,9 +14,7 @@ use std::error::Error;
 use std::sync::Mutex;
 use time::Duration;
 
-static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
-    Mutex::new(StdRng::from_entropy())
-});
+static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
 
 // FIXME: Ver como usar macros para reducir el codigo duplicado.
 pub async fn cargar_asegura_a(
@@ -26,9 +24,10 @@ pub async fn cargar_asegura_a(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for s in seguros {
-        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
-        let beneficiario = beneficiarios.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
-        let capital_asegurado = GLOBAL_RNG.lock().unwrap().gen_range(100000.0..1000000.0);
+        let mut rng = GLOBAL_RNG.lock()?;
+        let prof = profesores.choose(&mut *rng).unwrap();
+        let beneficiario = beneficiarios.choose(&mut *rng).unwrap();
+        let capital_asegurado = rng.gen_range(100000.0..1000000.0);
         let fecha_ingreso: Date = Date().fake();
         match sqlx::query!(
             r#"
@@ -62,8 +61,8 @@ pub async fn cargar_reside_en(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for p in profesores {
-        let dir = direcciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         let mut rng = GLOBAL_RNG.lock()?;
+        let dir = direcciones.choose(&mut *rng).unwrap();
         let vive_en_departamento = rng.gen::<bool>();
         let piso = if vive_en_departamento {
             Some(rng.gen_range(1..1000))
@@ -139,10 +138,11 @@ pub async fn cargar_percibe_en(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for p in percepciones {
-        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let mut rng = GLOBAL_RNG.lock()?;
+        let prof = profesores.choose(&mut *rng).unwrap();
         let desde: Date = Date().fake();
         let estado_percepcion = ["Suspendido", "Percibiendo"]
-            .choose(&mut *GLOBAL_RNG.lock()?)
+            .choose(&mut *rng)
             .unwrap()
             .to_string();
 
@@ -235,9 +235,10 @@ pub async fn cargar_referencias_bibliograficas(
     publicaciones: &[Publicaciones],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    for _ in 1..GLOBAL_RNG.lock()?.gen_range(1..publicaciones.len()) {
-        let p1 = publicaciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
-        let p2 = publicaciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+    let mut rng = GLOBAL_RNG.lock()?;
+    for _ in 1..rng.gen_range(1..publicaciones.len()) {
+        let p1 = publicaciones.choose(&mut *rng).unwrap();
+        let p2 = publicaciones.choose(&mut *rng).unwrap();
         match sqlx::query!(
             r#"
             insert into ReferenciaBibliografica (IDFuente, IDCitador)
@@ -265,13 +266,14 @@ pub async fn cargar_realizo_actividad(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        let act = actividades.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let mut rng = GLOBAL_RNG.lock()?;
+        let act = actividades.choose(&mut *rng).unwrap();
 
         let acciones: String = Word().fake();
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
         let hasta = desde + Duration::days(365);
-        let dedicacion = GLOBAL_RNG.lock()?.gen_range(1..8);
+        let dedicacion = rng.gen_range(1..8);
 
         match sqlx::query!(
             r#"
@@ -305,7 +307,7 @@ pub async fn cargar_participa_en_investigacion(
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
         let mut rng = GLOBAL_RNG.lock()?;
-        let act = actividades.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let act = actividades.choose(&mut *rng).unwrap();
         let desde: Date = Date().fake();
 
         // FIXME: Esto obviamente es muy ingenuo.
@@ -422,8 +424,9 @@ pub async fn cargar_conoce_idiomas(
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
         // FIXME: Encontrar una mejor manera de que cada profesor conozca al menos dos idiomas.
-        for _ in 1..=GLOBAL_RNG.lock()?.gen_range(1..3) {
-            let idioma = idiomas.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let mut rng = GLOBAL_RNG.lock()?;
+        for _ in 1..=rng.gen_range(1..3) {
+            let idioma = idiomas.choose(&mut *rng).unwrap();
             let certificacion: String = Word().fake();
             let institucion: String = Word().fake();
             let nivel: String = Word().fake();

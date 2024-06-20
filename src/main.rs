@@ -1,13 +1,18 @@
 use carga_datos::{db_cargasfk::*, db_tablas::*};
+use clap::Parser;
 use colored::Colorize;
 use dbdata::DBData;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
-use sqlx::mysql::MySqlPoolOptions;
-use sqlx::MySql;
-use sqlx::Pool;
 use std::error::Error;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    cantidad: usize,
+}
 
 /* Orden de carga hasta ahora:
 Primero aquellas tablas que no tienen FKs.
@@ -54,7 +59,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = conectar_con_bd().await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 10_000;
+    let muestras = Args::parse().cantidad;
+
+    let start = std::time::Instant::now();
 
     // Primero aquellas tablas que no tienen FK.
     // FIXME: Corregir las colisiones contra la bd?
@@ -88,7 +95,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in empleadores.iter() {
         i.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "Empleadores".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Empleadores".bright_green()
+    );
+
 
     let profesores: Vec<Profesores> = (1..=muestras)
         .map(|_| {
@@ -99,7 +111,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for p in profesores.iter() {
         p.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "Profesores".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Profesores".bright_green()
+    );
 
     let contactos: Vec<Contactos> = (1..=muestras)
         .map(|_| {
@@ -110,16 +126,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in contactos.iter() {
         i.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "Contactos".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Contactos".bright_green()
+    );
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "ConoceIdiomas".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ConoceIdiomas".bright_green()
+    );
 
     cargar_posee_titulo(&titulos, &profesores, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "PoseeTitulos".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "PoseeTitulos".bright_green()
+    );
 
     cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "AtendioA".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "AtendioA".bright_green()
+    );
 
     let ant_doc: Vec<AntecedentesDocentes> = (1..=muestras)
         .map(|_| {
@@ -130,21 +162,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in ant_doc.iter() {
         i.insertar_en_db(&pool).await?;
     }
+
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "AntecedentesDocentes".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "AntecedentesDocentes".bright_green()
     );
 
     cargar_participa_en_investigacion(&act_inv, &profesores, &pool).await?;
+
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ParticipaEnInvestigacion".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ParticipaEnInvestigacion".bright_green()
     );
 
     cargar_realizo_actividad(&act_uni, &profesores, &pool).await?;
+
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "RealizoActividad ".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "RealizoActividad".bright_green()
     );
 
     let ant_pro: Vec<AntecedentesProfesionales> = (1..=muestras)
@@ -157,27 +195,33 @@ async fn main() -> Result<(), Box<dyn Error>> {
         i.insertar_en_db(&pool).await?;
     }
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "AntecedentesProfesionales".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "AntecedentesProfesionales".bright_green()
     );
 
     cargar_referencias_bibliograficas(&publicaciones, &pool).await?;
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ReferenciasBibliograficas".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ReferenciasBibliograficas".bright_green()
     );
 
     cargar_publico_publicaciones(&publicaciones, &profesores, &pool).await?;
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "PublicoPublicacion".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "PublicoPublicacion".bright_green()
     );
 
     cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
+    
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "ParticipoEnReunion".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ParticipoEnReunion".bright_green()
     );
+
 
     let dep_emp: Vec<DependenciasOEmpresas> = (1..=muestras)
         .map(|_| {
@@ -189,8 +233,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         i.insertar_en_db(&pool).await?;
     }
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "DependenciasOEmpresas".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "DependenciasOEmpresas".bright_green()
     );
 
     let beneficiarios: Vec<Beneficiarios> = (1..=muestras)
@@ -202,7 +247,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in beneficiarios.iter() {
         i.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "Beneficiarios".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Beneficiarios".bright_green()
+    );
 
     let ob_social: Vec<ObrasSociales> = (1..=muestras)
         .map(|_| {
@@ -218,10 +268,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in ob_social.iter() {
         i.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "ObrasSociales".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ObrasSociales".bright_green()
+    );
 
     cargar_percibe_en(&percepciones, &profesores, &pool).await?;
-    eprintln!("Se ha cargado {} en correctamente!", "Percibe".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Percibe".bright_green()
+    );
 
     let dec_jur: Vec<DeclaracionesJuradas> = (1..=muestras)
         .map(|_| {
@@ -233,8 +293,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         i.insertar_en_db(&pool).await?;
     }
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "DeclaracionesJuradas".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "DeclaracionesJuradas".bright_green()
     );
 
     let dec_car: Vec<DeclaracionesDeCargo> = (1..=muestras)
@@ -247,8 +308,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         i.insertar_en_db(&pool).await?;
     }
     eprintln!(
-        "Se ha cargado {} correctamente!",
-        "DeclaracionesDeCargo".green()
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "DeclaracionesDeCargo".bright_green()
     );
 
     let horarios: Vec<Horarios> = (1..=muestras)
@@ -260,25 +322,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in horarios.iter() {
         i.insertar_en_db(&pool).await?;
     }
-    eprintln!("Se ha cargado {} correctamente!", "Horarios".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Horarios".bright_green()
+    );
 
     cargar_cumple_cargo(&profesores, &dec_car, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "CumpleCargo".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "CumpleCargo".bright_green()
+    );
 
     cargar_reside_en(&profesores, &direcciones, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "ResideEn".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "ResideEn".bright_green()
+    );
 
     cargar_asegura_a(&profesores, &seguros, &beneficiarios, &pool).await?;
-    eprintln!("Se ha cargado {} a correctamente!", "AseguraA".green());
+
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "AseguraA".bright_green()
+    );
+
+    eprintln!(
+        "{} Se han cargado {} registros en {} segundos.",
+        "[INFO]".bright_green(),
+        muestras.to_string().bright_green(),
+        start.elapsed().as_secs().to_string().bright_green()
+    );
+
     Ok(())
 }
 
-async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
-    dotenvy::dotenv()?;
-    let db_url =
-        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
-    Ok(MySqlPoolOptions::new()
-        .acquire_timeout(std::time::Duration::from_secs(4))
-        .connect(&db_url)
-        .await?)
-}
+

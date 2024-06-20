@@ -16,21 +16,28 @@ use fake::{
 use once_cell::sync::Lazy;
 use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, Rng, SeedableRng};
 use sqlx::{
-    types::{time::Date, BigDecimal, Type},
-    MySql, Pool,
+    mysql::MySqlPoolOptions, types::{time::Date, BigDecimal, Type}, MySql, Pool
 };
 use std::{error::Error, sync::Mutex};
 use time::Duration;
 
-static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
-    Mutex::new(StdRng::from_entropy())
-});
+static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
+
+pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
+    dotenvy::dotenv()?;
+    let db_url =
+        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
+    Ok(MySqlPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(4))
+        .connect(&db_url)
+        .await?)
+}
 
 pub async fn cargar_tabla<T>(muestras: usize, pool: &Pool<MySql>) -> Result<Vec<T>, Box<dyn Error>>
 where
     T: DBData + fake::Dummy<fake::Faker>,
 {
-    let mut tablas:Vec<T> = Vec::with_capacity(muestras);
+    let mut tablas: Vec<T> = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
         let ejemplar: T = Faker.fake();
         ejemplar.insertar_en_db(pool).await?;
@@ -38,7 +45,11 @@ where
     }
 
     let nombre_tabla = std::any::type_name::<T>().rsplit("::").next().unwrap();
-    eprintln!("Se ha cargado {} correctamente!", nombre_tabla.green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".to_string().bright_green(),
+        nombre_tabla.bright_green()
+    );
     Ok(tablas)
 }
 
@@ -71,7 +82,10 @@ impl Profesores {
         .choose(&mut *GLOBAL_RNG.lock().unwrap())
         .unwrap()
         .to_string();
-        let sexo = ['M', 'F'].choose(&mut *GLOBAL_RNG.lock().unwrap()).unwrap().to_string();
+        let sexo = ['M', 'F']
+            .choose(&mut *GLOBAL_RNG.lock().unwrap())
+            .unwrap()
+            .to_string();
         let fecha_nacimiento = Date().fake();
         let nacionalidad = CountryName().fake();
         let cuil = Cuil::new(&dni);
@@ -96,7 +110,6 @@ impl Profesores {
         }
     }
 }
-
 
 #[derive(Debug, DBData)]
 pub struct Contactos {
@@ -146,7 +159,7 @@ impl Contactos {
 //            r#"
 //
 //            insert into Contactos
-//            (DNIProfesor, Tipo, Direccion, Medio, Numero) 
+//            (DNIProfesor, Tipo, Direccion, Medio, Numero)
 //            values (?,?,?,?,?)
 //
 //            "#,
@@ -191,7 +204,7 @@ impl Dummy<Faker> for Titulos {
 //            r#"
 //
 //            insert into Titulos
-//            (Institucion, Nivel, Titulo) 
+//            (Institucion, Nivel, Titulo)
 //            values (?,?,?)
 //
 //            "#,
@@ -220,19 +233,15 @@ pub struct CursosOConferencias {
 }
 
 impl Dummy<Faker> for CursosOConferencias {
-    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, _: &mut R) -> Self {
+    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
         let nombre: String = Name().fake();
         let institucion: String = Word().fake();
-        let mut rng = GLOBAL_RNG.lock().unwrap();
         let descripcion = if rng.gen::<bool>() {
             Some(Words(1..20).fake::<Vec<String>>().join(" "))
         } else {
             None
         };
-        let tipo = ["Curso", "Conferencia"]
-            .choose(&mut *GLOBAL_RNG.lock().unwrap())
-            .unwrap()
-            .to_string();
+        let tipo = ["Curso", "Conferencia"].choose(rng).unwrap().to_string();
         Self {
             nombre,
             institucion,
@@ -303,7 +312,6 @@ impl AntecedentesDocentes {
         }
     }
 }
-
 
 #[derive(Debug, Dummy, DBData)]
 pub struct ActividadesInvestigacion {
@@ -475,7 +483,6 @@ impl Dummy<Faker> for ReunionesCientificas {
 //        Ok(())
 //    }
 //}
-
 
 #[derive(Debug, DBData)]
 pub struct DependenciasOEmpresas {
@@ -784,8 +791,8 @@ pub struct Seguros {
 }
 
 impl Dummy<Faker> for Seguros {
-    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, _: &mut R) -> Self {
-        let codigo_compania = GLOBAL_RNG.lock().unwrap().gen();
+    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        let codigo_compania = rng.gen();
         let compania_aseguradora = CompanyName().fake();
         let lugar_emision = CityName().fake();
         let fecha_emision = Date().fake();
@@ -831,10 +838,7 @@ impl Beneficiarios {
         let tipo_documento = Word().fake();
         // FIXME: Va a ocurrir que entre los beneficiarios o no cubriran el 100% o sobrepasaran el
         // 100%, por como está definido esto.
-        let porcentaje = BigDecimal::new(
-            rng.gen_range(1..2).into(),
-            rng.gen_range(1..27),
-        );
+        let porcentaje = BigDecimal::new(rng.gen_range(1..2).into(), rng.gen_range(1..27));
         let vive_en_departamento = rng.gen::<bool>();
         let piso = if vive_en_departamento {
             Some(rng.gen_range(1..1000))
