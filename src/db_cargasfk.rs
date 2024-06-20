@@ -3,13 +3,20 @@ use crate::db_tablas::*;
 use fake::faker::lorem::en::*;
 use fake::faker::time::en::Date;
 use fake::Fake;
+use once_cell::sync::Lazy;
+use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use rand::Rng;
+use rand::SeedableRng;
 use sqlx::types::time::Date;
 use sqlx::{MySql, Pool};
 use std::error::Error;
+use std::sync::Mutex;
 use time::Duration;
+
+static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
+    Mutex::new(StdRng::from_entropy())
+});
 
 // FIXME: Ver como usar macros para reducir el codigo duplicado.
 pub async fn cargar_asegura_a(
@@ -19,9 +26,9 @@ pub async fn cargar_asegura_a(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for s in seguros {
-        let prof = profesores.choose(&mut thread_rng()).unwrap();
-        let beneficiario = beneficiarios.choose(&mut thread_rng()).unwrap();
-        let capital_asegurado = thread_rng().gen_range(100000.0..1000000.0);
+        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let beneficiario = beneficiarios.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let capital_asegurado = GLOBAL_RNG.lock().unwrap().gen_range(100000.0..1000000.0);
         let fecha_ingreso: Date = Date().fake();
         match sqlx::query!(
             r#"
@@ -55,8 +62,8 @@ pub async fn cargar_reside_en(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for p in profesores {
-        let dir = direcciones.choose(&mut thread_rng()).unwrap();
-        let mut rng = thread_rng();
+        let dir = direcciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let mut rng = GLOBAL_RNG.lock()?;
         let vive_en_departamento = rng.gen::<bool>();
         let piso = if vive_en_departamento {
             Some(rng.gen_range(1..1000))
@@ -102,7 +109,7 @@ pub async fn cargar_cumple_cargo(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for d in declaraciones_cargo {
-        let prof = profesores.choose(&mut thread_rng()).unwrap();
+        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         match sqlx::query!(
             r#"
             insert into CumpleCargo(
@@ -132,10 +139,10 @@ pub async fn cargar_percibe_en(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for p in percepciones {
-        let prof = profesores.choose(&mut thread_rng()).unwrap();
+        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         let desde: Date = Date().fake();
         let estado_percepcion = ["Suspendido", "Percibiendo"]
-            .choose(&mut thread_rng())
+            .choose(&mut *GLOBAL_RNG.lock()?)
             .unwrap()
             .to_string();
 
@@ -171,7 +178,7 @@ pub async fn cargar_participo_en_reunion(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for r in reuniones {
-        let prof = profesores.choose(&mut thread_rng()).unwrap();
+        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         let participacion: String = Word().fake();
         match sqlx::query!(
             r#"
@@ -202,7 +209,7 @@ pub async fn cargar_publico_publicaciones(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for p in publicaciones {
-        let prof = profesores.choose(&mut thread_rng()).unwrap();
+        let prof = profesores.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         match sqlx::query!(
             r#"
             insert into PublicoPublicacion(IDPublicacion, DNIProfesor)
@@ -228,9 +235,9 @@ pub async fn cargar_referencias_bibliograficas(
     publicaciones: &[Publicaciones],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    for _ in 1..thread_rng().gen_range(1..publicaciones.len()) {
-        let p1 = publicaciones.choose(&mut thread_rng()).unwrap();
-        let p2 = publicaciones.choose(&mut thread_rng()).unwrap();
+    for _ in 1..GLOBAL_RNG.lock()?.gen_range(1..publicaciones.len()) {
+        let p1 = publicaciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
+        let p2 = publicaciones.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         match sqlx::query!(
             r#"
             insert into ReferenciaBibliografica (IDFuente, IDCitador)
@@ -258,14 +265,13 @@ pub async fn cargar_realizo_actividad(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        let mut rng = thread_rng();
-        let act = actividades.choose(&mut thread_rng()).unwrap();
+        let act = actividades.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
 
         let acciones: String = Word().fake();
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
         let hasta = desde + Duration::days(365);
-        let dedicacion = rng.gen_range(1..8);
+        let dedicacion = GLOBAL_RNG.lock()?.gen_range(1..8);
 
         match sqlx::query!(
             r#"
@@ -298,8 +304,8 @@ pub async fn cargar_participa_en_investigacion(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        let mut rng = thread_rng();
-        let act = actividades.choose(&mut thread_rng()).unwrap();
+        let mut rng = GLOBAL_RNG.lock()?;
+        let act = actividades.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         let desde: Date = Date().fake();
 
         // FIXME: Esto obviamente es muy ingenuo.
@@ -335,12 +341,12 @@ pub async fn cargar_participa_en_investigacion(
 }
 
 pub async fn cargar_atendio_a(
-    curso_conferencia: &[CursoOConferencia],
+    curso_conferencia: &[CursosOConferencias],
     profesores: &[Profesores],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        let c = curso_conferencia.choose(&mut thread_rng()).unwrap();
+        let c = curso_conferencia.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
         let desde: Date = Date().fake();
         let hasta = match c.tipo.as_str() {
             "Curso" => Some(desde + Duration::days(30)),
@@ -379,7 +385,7 @@ pub async fn cargar_posee_titulo(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        let t = titulos.choose(&mut thread_rng()).unwrap();
+        let t = titulos.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
 
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
@@ -416,8 +422,8 @@ pub async fn cargar_conoce_idiomas(
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
         // FIXME: Encontrar una mejor manera de que cada profesor conozca al menos dos idiomas.
-        for _ in 1..=thread_rng().gen_range(1..3) {
-            let idioma = idiomas.choose(&mut thread_rng()).unwrap();
+        for _ in 1..=GLOBAL_RNG.lock()?.gen_range(1..3) {
+            let idioma = idiomas.choose(&mut *GLOBAL_RNG.lock()?).unwrap();
             let certificacion: String = Word().fake();
             let institucion: String = Word().fake();
             let nivel: String = Word().fake();

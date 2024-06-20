@@ -1,5 +1,6 @@
 use carga_datos::{db_cargasfk::*, db_tablas::*};
 use colored::Colorize;
+use dbdata::DBData;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
@@ -53,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = conectar_con_bd().await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let muestras = 1_000;
+    let muestras = 10_000;
 
     // Primero aquellas tablas que no tienen FK.
     // FIXME: Corregir las colisiones contra la bd?
@@ -70,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
-    let cur_conf = cargar_tabla::<CursoOConferencia>(muestras, &pool).await?;
+    let cur_conf = cargar_tabla::<CursosOConferencias>(muestras, &pool).await?;
     let act_inv = cargar_tabla::<ActividadesInvestigacion>(muestras, &pool).await?;
     let act_uni = cargar_tabla::<ActividadesExtensionUniversitaria>(muestras, &pool).await?;
     let publicaciones = cargar_tabla::<Publicaciones>(muestras, &pool).await?;
@@ -276,5 +277,8 @@ async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
     dotenvy::dotenv()?;
     let db_url =
         std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
-    Ok(MySqlPoolOptions::new().connect(&db_url).await?)
+    Ok(MySqlPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(4))
+        .connect(&db_url)
+        .await?)
 }
