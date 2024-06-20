@@ -16,7 +16,9 @@ use fake::{
 use once_cell::sync::Lazy;
 use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, Rng, SeedableRng};
 use sqlx::{
-    mysql::MySqlPoolOptions, types::{time::Date, BigDecimal, Type}, MySql, Pool
+    mysql::MySqlPoolOptions,
+    types::{time::Date, BigDecimal, Type},
+    MySql, Pool,
 };
 use std::{error::Error, sync::Mutex};
 use time::Duration;

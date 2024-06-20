@@ -1,5 +1,6 @@
 //#![allow(dead_code)]
 use crate::db_tablas::*;
+use colored::Colorize;
 use fake::faker::lorem::en::*;
 use fake::faker::time::en::Date;
 use fake::Fake;
@@ -47,7 +48,7 @@ pub async fn cargar_asegura_a(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -95,7 +96,7 @@ pub async fn cargar_reside_en(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -124,7 +125,7 @@ pub async fn cargar_cumple_cargo(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -164,7 +165,7 @@ pub async fn cargar_percibe_en(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -195,7 +196,7 @@ pub async fn cargar_participo_en_reunion(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -223,7 +224,7 @@ pub async fn cargar_publico_publicaciones(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -252,7 +253,7 @@ pub async fn cargar_referencias_bibliograficas(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -292,7 +293,7 @@ pub async fn cargar_realizo_actividad(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -334,7 +335,7 @@ pub async fn cargar_participa_en_investigacion(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -373,7 +374,7 @@ pub async fn cargar_atendio_a(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -409,7 +410,7 @@ pub async fn cargar_posee_titulo(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("Error: {}", err);
+                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                 continue;
             }
         };
@@ -446,7 +447,7 @@ pub async fn cargar_conoce_idiomas(
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    eprintln!("Error: {}", err);
+                    eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                     continue;
                 }
             };
@@ -473,7 +474,7 @@ pub async fn cargar_idiomas(idiomas: &[&str], pool: &Pool<MySql>) -> Result<(), 
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    eprintln!("Error: {}", err);
+                    eprintln!("{} {}", "[Warn]".bright_yellow(), err);
                     continue;
                 }
             };

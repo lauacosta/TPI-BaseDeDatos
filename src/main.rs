@@ -74,7 +74,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Italiano",
     ];
     cargar_idiomas(&idiomas, &pool).await?;
-    eprintln!("Se ha cargado {} correctamente!", "Idiomas".green());
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "Idiomas".bright_green()
+    );
 
     let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
@@ -100,7 +104,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "[INFO]".bright_green(),
         "Empleadores".bright_green()
     );
-
 
     let profesores: Vec<Profesores> = (1..=muestras)
         .map(|_| {
@@ -215,13 +218,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
-    
+
     eprintln!(
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
         "ParticipoEnReunion".bright_green()
     );
-
 
     let dep_emp: Vec<DependenciasOEmpresas> = (1..=muestras)
         .map(|_| {
@@ -280,7 +282,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eprintln!(
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
-        "Percibe".bright_green()
+        "PercibeEn".bright_green()
     );
 
     let dec_jur: Vec<DeclaracionesJuradas> = (1..=muestras)
@@ -355,11 +357,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eprintln!(
         "{} Se han cargado {} registros en {} segundos.",
         "[INFO]".bright_green(),
-        muestras.to_string().bright_green(),
+        (muestras * 33).to_string().bright_green(),
         start.elapsed().as_secs().to_string().bright_green()
     );
 
     Ok(())
 }
-
-

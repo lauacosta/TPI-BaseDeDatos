@@ -374,6 +374,7 @@ dependencies = [
 name = "dbdata_derive"
 version = "0.1.0"
 dependencies = [
+ "colored",
  "quote",
  "syn 2.0.66",
 ]
