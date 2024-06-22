@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into ParticipoEnReunion(DNIProfesor, Titulo, Fecha, Participacion)\n            values (?,?,?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "b8542e456b9e951790644ae90fac08cefe6e87f7d57edae39e4cb1c6ab96a7ca"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into ReferenciaBibliografica (IDFuente, IDCitador)\n            values (?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "44643b774b80e3c99a5b228b59a82035aa807f9f76612182a42348c21abd9fe4"
+}

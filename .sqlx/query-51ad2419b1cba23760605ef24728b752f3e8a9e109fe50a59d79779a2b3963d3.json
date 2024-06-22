@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into CumpleCargo(\n                DNIProfesor, IDDeclaracion\n            )\n            values (?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "51ad2419b1cba23760605ef24728b752f3e8a9e109fe50a59d79779a2b3963d3"
+}

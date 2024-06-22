@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into PublicoPublicacion(IDPublicacion, DNIProfesor)\n            values (?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "3e4cce3c933de8a3f9d84c55ff9ad5f56b27020caf30dea25c975ef32a507475"
+}

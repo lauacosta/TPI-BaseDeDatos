@@ -1,4 +1,3 @@
-use colored::Colorize;
 use dbdata::DBData;
 use dbdata_derive::DBData;
 use fake::{
@@ -16,7 +15,6 @@ use fake::{
 use once_cell::sync::Lazy;
 use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, Rng, SeedableRng};
 use sqlx::{
-    mysql::MySqlPoolOptions,
     types::{time::Date, BigDecimal, Type},
     MySql, Pool,
 };
@@ -25,35 +23,6 @@ use time::Duration;
 
 static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
 
-pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
-    dotenvy::dotenv()?;
-    let db_url =
-        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
-    Ok(MySqlPoolOptions::new()
-        .acquire_timeout(std::time::Duration::from_secs(4))
-        .connect(&db_url)
-        .await?)
-}
-
-pub async fn cargar_tabla<T>(muestras: usize, pool: &Pool<MySql>) -> Result<Vec<T>, Box<dyn Error>>
-where
-    T: DBData + fake::Dummy<fake::Faker>,
-{
-    let mut tablas: Vec<T> = Vec::with_capacity(muestras);
-    for _ in 1..=muestras {
-        let ejemplar: T = Faker.fake();
-        ejemplar.insertar_en_db(pool).await?;
-        tablas.push(ejemplar);
-    }
-
-    let nombre_tabla = std::any::type_name::<T>().rsplit("::").next().unwrap();
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".to_string().bright_green(),
-        nombre_tabla.bright_green()
-    );
-    Ok(tablas)
-}
 
 #[derive(Debug, DBData)]
 pub struct Profesores {
@@ -116,8 +85,8 @@ impl Profesores {
 #[derive(Debug, DBData)]
 pub struct Contactos {
     pub dni_profesor: Dni, //WARN: FK de Profesores
-    pub tipo: String,      // ('Celular', 'Telefono', 'Email')
-    pub medio: String,     // ('Personal', 'Empresarial', 'Otro')
+    pub tipo: String,      // ('Personal', 'Empresarial', 'Otro')
+    pub medio: String,     // ('Celular', 'Telefono', 'Email')
     pub direccion: Option<String>,
     pub numero: Option<String>,
 }
@@ -125,12 +94,12 @@ pub struct Contactos {
 impl Contactos {
     pub fn new(profesor: &Profesores) -> Self {
         let dni_profesor = profesor.dni.clone();
-        let tipo = ["Celular", "Telefono", "Email"]
+        let medio = ["Celular", "Telefono", "Email"]
             .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
 
-        let medio = ["Personal", "Empresarial", "Otro"]
+        let tipo = ["Personal", "Empresarial", "Otro"]
             .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
@@ -155,34 +124,6 @@ impl Contactos {
     }
 }
 
-//impl DBData for Contactos {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//
-//            insert into Contactos
-//            (DNIProfesor, Tipo, Direccion, Medio, Numero)
-//            values (?,?,?,?,?)
-//
-//            "#,
-//            self.dni_profesor,
-//            self.tipo,
-//            self.direccion,
-//            self.medio,
-//            self.numero
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
-
 #[derive(Debug, DBData)]
 pub struct Titulos {
     pub institucion: String,
@@ -199,32 +140,6 @@ impl Dummy<Faker> for Titulos {
         }
     }
 }
-
-//impl DBData for Titulos {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//
-//            insert into Titulos
-//            (Institucion, Nivel, Titulo)
-//            values (?,?,?)
-//
-//            "#,
-//            self.institucion,
-//            self.nivel,
-//            self.titulo
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
 
 #[derive(Debug, DBData)]
 pub struct CursosOConferencias {
@@ -252,30 +167,6 @@ impl Dummy<Faker> for CursosOConferencias {
         }
     }
 }
-
-//impl DBData for CursoOConferencia {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//            insert into CursosOConferencias (Nombre, Institucion, Descripcion, Tipo)
-//            values (?,?,?,?)
-//            "#,
-//            self.nombre,
-//            self.institucion,
-//            self.descripcion,
-//            self.tipo
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
 
 #[derive(Debug, DBData)]
 pub struct AntecedentesDocentes {
@@ -368,32 +259,6 @@ impl AntecedentesProfesionales {
     }
 }
 
-//impl DBData for AntecedentesProfesionales {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//            insert into AntecedentesProfesionales (DNIProfesor, Cargo, Empresa, TipoActividad, Desde, Hasta)
-//            values (?,?,?,?,?,?)
-//            "#,
-//            self.dni_profesor,
-//            self.cargo,
-//            self.empresa,
-//            self.tipo_actividad,
-//            self.desde,
-//            self.hasta,
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
-//
 #[derive(Debug, DBData)]
 pub struct Publicaciones {
     pub id_publicacion: u32,
@@ -424,30 +289,6 @@ impl Dummy<Faker> for Publicaciones {
     }
 }
 
-//impl DBData for Publicaciones {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//            insert into Publicaciones (IDPublicacion, Autores, Anio, Titulo)
-//            values (?,?,?,?)
-//            "#,
-//            self.id_publicacion,
-//            self.autores,
-//            self.anio,
-//            self.titulo
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
-
 #[derive(Debug, DBData)]
 pub struct ReunionesCientificas {
     pub titulo: String,
@@ -463,28 +304,6 @@ impl Dummy<Faker> for ReunionesCientificas {
         }
     }
 }
-
-//impl DBData for ReunionesCientificas {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//            insert into ReunionesCientificas(Titulo, Fecha)
-//            values (?,?)
-//            "#,
-//            self.titulo,
-//            self.fecha
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
 
 #[derive(Debug, DBData)]
 pub struct DependenciasOEmpresas {
@@ -529,37 +348,6 @@ impl DependenciasOEmpresas {
         }
     }
 }
-
-//impl DBData for DependenciasOEmpresas {
-//    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
-//        match sqlx::query!(
-//            r#"
-//            insert into DependenciasOEmpresas (
-//                DNIProfesor, Nombre, FechaIngreso, Cargo, Lugar, TipoActividad, ObraSocial, Observacion, NaturalezaJuridica
-//            )
-//            values (?,?,?,?,?,?,?,?,?)
-//            "#,
-//            self.dni_profesor,
-//            self.nombre,
-//            self.fecha_ingreso,
-//            self.cargo,
-//            self.lugar,
-//            self.tipo_actividad,
-//            self.obra_social,
-//            self.observacion,
-//            self.naturaleza_juridica
-//        )
-//        .execute(pool)
-//        .await
-//        {
-//            Ok(_) => (),
-//            Err(err) => {
-//                eprintln!("Error: {}", err);
-//            }
-//        };
-//        Ok(())
-//    }
-//}
 
 #[derive(Debug, DBData)]
 pub struct ObrasSociales {
@@ -683,6 +471,8 @@ impl Dummy<Faker> for Direcciones {
         }
     }
 }
+
+impl 
 
 #[derive(Debug, DBData)]
 pub struct DeclaracionesDeCargo {

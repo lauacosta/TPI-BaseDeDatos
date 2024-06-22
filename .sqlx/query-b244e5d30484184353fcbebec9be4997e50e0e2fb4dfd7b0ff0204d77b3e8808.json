@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into RealizoActividad (IDActividad, DNIProfesor, Acciones, Dedicacion, Hasta, Desde)\n            values (?,?,?,?,?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "b244e5d30484184353fcbebec9be4997e50e0e2fb4dfd7b0ff0204d77b3e8808"
+}

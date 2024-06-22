@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into PercibeEn(\n                DNI, InstitucionCaja, Tipo, EstadoPercepcion, Desde\n            )\n            values (?,?,?,?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "c9ae306e38401326d8f6cff3cbd4c76eb07bdfdc7e295f75e3b9b2cb439ebe5f"
+}

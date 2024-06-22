@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into Idiomas (Nombre) values (?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "60539755641659c4bf94eea47d2d5cf9f07846871f3b73c39a07857a0e568300"
+}

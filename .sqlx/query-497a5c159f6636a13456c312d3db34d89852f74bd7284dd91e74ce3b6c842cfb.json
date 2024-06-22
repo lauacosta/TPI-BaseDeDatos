@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into ResideEn(\n                DNIProfesor, CodigoPostal, Calle, Numero, Piso, Departamento\n            )\n            values (?,?,?,?,?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "497a5c159f6636a13456c312d3db34d89852f74bd7284dd91e74ce3b6c842cfb"
+}

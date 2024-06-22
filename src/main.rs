@@ -1,4 +1,4 @@
-use carga_datos::{db_cargasfk::*, db_tablas::*};
+use carga_datos::{db_cargasfk::*, db_tablas::*, *};
 use clap::Parser;
 use colored::Colorize;
 use dbdata::DBData;
@@ -73,12 +73,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Japones",
         "Italiano",
     ];
-    cargar_idiomas(&idiomas, &pool).await?;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Idiomas".bright_green()
-    );
+    //cargar_idiomas(&idiomas, &pool).await?;
+    //eprintln!(
+    //    "{} Se ha cargado {} correctamente!",
+    //    "[INFO]".bright_green(),
+    //    "Idiomas".bright_green()
+    //);
 
     let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
@@ -90,49 +90,53 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let percepciones = cargar_tabla::<Percepciones>(muestras, &pool).await?;
     let seguros = cargar_tabla::<Seguros>(muestras, &pool).await?;
 
-    let empleadores: Vec<Empleadores> = (1..=muestras)
-        .map(|_| {
-            let direccion = direcciones.choose(&mut thread_rng()).unwrap();
-            Empleadores::new(direccion)
-        })
-        .collect();
-    for i in empleadores.iter() {
-        i.insertar_en_db(&pool).await?;
+    let mut empleadores = Vec::with_capacity(muestras);
+    for _ in 1..=muestras {
+        let direccion = direcciones.choose(&mut thread_rng()).unwrap();
+        let fila = Empleadores::new(direccion);
+        fila.insertar_en_db(&pool).await?;
+        empleadores.push(fila);
     }
+
     eprintln!(
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
         "Empleadores".bright_green()
     );
 
-    let profesores: Vec<Profesores> = (1..=muestras)
-        .map(|_| {
-            let empleador = empleadores.choose(&mut thread_rng()).unwrap();
-            Profesores::new(empleador)
-        })
-        .collect();
-    for p in profesores.iter() {
-        p.insertar_en_db(&pool).await?;
+    let mut profesores = Vec::with_capacity(muestras);
+    for _ in 1..=muestras {
+        let empleador = empleadores.choose(&mut thread_rng()).unwrap();
+        let fila = Profesores::new(empleador);
+        fila.insertar_en_db(&pool).await?;
+        profesores.push(fila);
     }
+
     eprintln!(
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
         "Profesores".bright_green()
     );
 
-    let contactos: Vec<Contactos> = (1..=muestras)
-        .map(|_| {
-            let profesor = profesores.choose(&mut thread_rng()).unwrap();
-            Contactos::new(profesor)
-        })
-        .collect();
-    for i in contactos.iter() {
-        i.insertar_en_db(&pool).await?;
+    let mut contactos = Vec::with_capacity(muestras);
+    for _ in 1..=muestras {
+        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let fila = Contactos::new(profesor);
+        fila.insertar_en_db(&pool).await?;
+        contactos.push(fila)
     }
+
     eprintln!(
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
         "Contactos".bright_green()
+    );
+
+    cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
+    eprintln!(
+        "{} Se ha cargado {} correctamente!",
+        "[INFO]".bright_green(),
+        "AtendioA".bright_green()
     );
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
@@ -147,13 +151,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "{} Se ha cargado {} correctamente!",
         "[INFO]".bright_green(),
         "PoseeTitulos".bright_green()
-    );
-
-    cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "AtendioA".bright_green()
     );
 
     let ant_doc: Vec<AntecedentesDocentes> = (1..=muestras)

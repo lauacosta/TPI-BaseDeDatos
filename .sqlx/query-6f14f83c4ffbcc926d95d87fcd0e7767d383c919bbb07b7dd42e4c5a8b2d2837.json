@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            insert into PoseeTitulo (DNI, Institucion, Nivel, Titulo, Desde, Hasta)\n            values (?,?,?,?,?,?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "6f14f83c4ffbcc926d95d87fcd0e7767d383c919bbb07b7dd42e4c5a8b2d2837"
+}
