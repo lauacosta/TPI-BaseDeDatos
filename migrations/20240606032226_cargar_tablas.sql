@@ -31,7 +31,7 @@ CREATE TABLE Profesores (
 	PRIMARY KEY (DNI)
 );
 
-CREATE TABLE Institucion (
+CREATE TABLE Instituciones (
     Nombre varchar(255),
 	CodigoPostal int unsigned,
 	Calle varchar(100),
@@ -42,16 +42,16 @@ CREATE TABLE Institucion (
 
 CREATE TABLE Contactos (
 	DNIProfesor char(8),
-	Tipo enum('Celular', 'Telefono', 'Email'),
+	Medio enum('Celular', 'Telefono', 'Email'),
 	Direccion varchar(100),
-	Medio enum('Personal', 'Empresarial', 'Otro'),
+	Tipo enum('Personal', 'Empresarial', 'Otro'),
 	Numero varchar(30),
 	PRIMARY KEY (DNIProfesor, Tipo, Medio),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) 
     ON DELETE CASCADE ON UPDATE CASCADE,
     CHECK (
-        (Tipo IN ('Celular', 'Telefono') AND Numero IS NOT NULL) OR 
-        (Tipo = 'Email' AND Direccion IS NOT NULL)
+        (Medio IN ('Celular', 'Telefono') AND Numero IS NOT NULL) OR 
+        (Medio = 'Email' AND Direccion IS NOT NULL)
     )
 );
 
@@ -65,7 +65,7 @@ CREATE TABLE SeDaIdioma (
     NombreInst varchar(255),
     PRIMARY KEY(NombreIdioma, NombreInst),
     FOREIGN KEY(NombreIdioma) REFERENCES Idiomas(Nombre),
-    FOREIGN KEY(NombreInst) REFERENCES Institucion(Nombre)
+    FOREIGN KEY(NombreInst) REFERENCES Instituciones(Nombre)
 );
 
 CREATE TABLE ConoceIdioma (
@@ -90,7 +90,7 @@ CREATE TABLE SeDaTitulo (
     Nivel varchar(50),
     PRIMARY KEY (Nivel, Titulo, NombreInst),
     FOREIGN KEY (Nivel, Titulo) REFERENCES Titulos (Nivel, Titulo),
-    FOREIGN KEY (NombreInst) REFERENCES Institucion (Nombre)
+    FOREIGN KEY (NombreInst) REFERENCES Instituciones (Nombre)
 );
 
 
@@ -111,7 +111,7 @@ CREATE TABLE CursosConferencias (
 	Descripcion varchar(255),
 	Tipo enum('Curso', 'Conferencia') NOT NULL,
 	PRIMARY KEY (NombreCurso),
-    FOREIGN KEY (NombreInst) REFERENCES Institucion(Nombre)
+    FOREIGN KEY (NombreInst) REFERENCES Instituciones(Nombre)
 );
 
 CREATE TABLE AtendioA (
@@ -131,7 +131,7 @@ CREATE TABLE ActividadesInvestigacion (
 	Categoria varchar(50) NOT NULL,
 	AreaPPAL varchar(50) NOT NULL,
 	PRIMARY KEY (IDInvestigacion),
-    FOREIGN KEY (NombreInst) REFERENCES Institucion(Nombre)
+    FOREIGN KEY (NombreInst) REFERENCES Instituciones(Nombre)
 );
 
 CREATE TABLE RealizaInves (
@@ -151,19 +151,53 @@ CREATE TABLE ActividadesExtensionUniversitaria (
 	Cargo varchar(50) NOT NULL,
 	Categoria varchar(50) NOT NULL,
 	PRIMARY KEY (IDActividad),
-    FOREIGN KEY (NombreInst) REFERENCES Institucion(Nombre)
+    FOREIGN KEY (NombreInst) REFERENCES Instituciones(Nombre)
 );
 
 CREATE TABLE RealizoAct(
 	IDActividad int unsigned,
 	DNIProfesor char(8),
 	Acciones varchar(50) NOT NULL,
-	Dedidacion int unsigned NOT NULL,
+	Dedicacion int unsigned NOT NULL,
 	Hasta date NOT NULL,
 	Desde date NOT NULL,
 	PRIMARY KEY (DNIProfesor, IDActividad),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI),
 	FOREIGN KEY (IDActividad) REFERENCES ActividadesExtensionUniversitaria(IDActividad)
+);
+
+CREATE TABLE ObrasSociales (
+    NombreObra varchar(100),
+    IDObraSocial int unsigned,
+    PRIMARY KEY (IDObraSocial)
+);
+
+CREATE TABLE DependenciasEmpresas (
+	DNIProfesor char(8),
+	Nombre varchar(100),
+	TipoActividad enum('Autónomo', 'Dependencia') NOT NULL,
+	Observacion varchar(250) NOT NULL,
+	NaturalezaJuridica enum('Privado', 'Publico'),
+	CodigoPostal int unsigned,
+	Calle varchar(100),
+	Numero int unsigned,
+    IDObraSocial int unsigned,
+    PRIMARY KEY (DNIProfesor, Nombre), 
+    FOREIGN KEY (IDObraSocial) REFERENCES ObrasSociales(IDObraSocial),
+	FOREIGN KEY (CodigoPostal, Calle, Numero) REFERENCES Direcciones(CodigoPostal, Calle, Numero),
+	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE DeclaracionesDeCargo (
+    DNIProfesor char(8),
+    NombreDep varchar(100),
+	IDDeclaracion int unsigned,
+	CumpleHorario varchar(100) NOT NULL,
+	Reparticion varchar(100) NOT NULL,
+	Dependencia varchar(100) NOT NULL,
+	PRIMARY KEY (IDDeclaracion),
+    FOREIGN KEY (DNIProfesor, NombreDep) REFERENCES DependenciasEmpresas(DNIProfesor, Nombre)
 );
 
 CREATE TABLE AntecedentesProfesionales (
@@ -173,6 +207,7 @@ CREATE TABLE AntecedentesProfesionales (
 	Desde date not null,
 	Hasta date not null,
 	PRIMARY KEY (DNIProfesor, TipoActividad),
+    FOREIGN KEY(IDDeclaracion) REFERENCES DeclaracionesDeCargo(IDDeclaracion),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI)
     ON DELETE CASCADE ON UPDATE	CASCADE
 );
@@ -217,28 +252,7 @@ CREATE TABLE ParticipoEnReunion (
 	FOREIGN KEY (Titulo, Fecha) REFERENCES ReunionesCientificas(Titulo, Fecha)
 );
 
-CREATE TABLE ObrasSociales (
-    NombreObra varchar(100),
-    IDObraSocial int unsigned,
-    PRIMARY KEY (IDObraSocial)
-);
 
-CREATE TABLE DependenciasEmpresas (
-	DNIProfesor char(8),
-	Nombre varchar(100),
-	TipoActividad enum('Autónomo', 'Dependencia') NOT NULL,
-	Observacion varchar(250) NOT NULL,
-	NaturalezaJuridica enum('Privado', 'Publico'),
-	CodigoPostal int unsigned,
-	Calle varchar(100),
-	Numero int unsigned,
-    IDObraSocial int unsigned,
-    PRIMARY KEY (DNIProfesor, Nombre), 
-    FOREIGN KEY (IDObraSocial) REFERENCES ObrasSociales(IDObraSocial),
-	FOREIGN KEY (CodigoPostal, Calle, Numero) REFERENCES Direcciones(CodigoPostal, Calle, Numero),
-	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI)
-    ON DELETE CASCADE ON UPDATE CASCADE
-);
 
 CREATE TABLE Familiares (
     DNIProfesor char(8),
@@ -321,16 +335,6 @@ CREATE TABLE DeclaracionesJuradas (
 );
 
 
-CREATE TABLE DeclaracionesDeCargo (
-    DNIProfesor char(8),
-    NombreDep varchar(100),
-	IDDeclaracion int unsigned,
-	CumpleHorario varchar(100) NOT NULL,
-	Reparticion varchar(100) NOT NULL,
-	Dependencia varchar(100) NOT NULL,
-	PRIMARY KEY (IDDeclaracion),
-    FOREIGN KEY (DNIProfesor, NombreDep) REFERENCES DependenciasEmpresas(DNIProfesor, Nombre)
-);
 
 CREATE TABLE AntecedentesDocentes (
 	NombreInst varchar(255),
@@ -341,7 +345,7 @@ CREATE TABLE AntecedentesDocentes (
 	Hasta date,
 	Dedicacion int unsigned NOT NULL,
 	PRIMARY KEY (DNIProfesor, UnidadAcademica),
-    FOREIGN KEY (NombreInst) REFERENCES Institucion(Nombre),
+    FOREIGN KEY (NombreInst) REFERENCES Instituciones(Nombre),
     FOREIGN KEY (IDDeclaracion) REFERENCES DeclaracionesDeCargo(IDDeclaracion),
 	FOREIGN KEY (DNIProfesor) REFERENCES Profesores(DNI) 
     ON DELETE CASCADE ON UPDATE	CASCADE
@@ -364,15 +368,15 @@ CREATE TABLE Horarios (
 );
 
 CREATE TABLE Empleadores (
-	CUIT_CUIL char(11),
-    CHECK (CUIT_CUIL REGEXP '^[0-9]{11}$'),
+	CUIT char(11),
+    CHECK (CUIT REGEXP '^[0-9]{11}$'),
 	RazonSocial varchar(100),
 	CodigoPostal int unsigned NOT NULL,
 	Calle varchar(100) NOT NULL,
 	Numero int unsigned NOT NULL,
 	Piso int unsigned,
 	Departamento tinyint,
-	PRIMARY KEY (CUIT_CUIL),
+	PRIMARY KEY (CUIT),
 	FOREIGN KEY (CodigoPostal, Calle, Numero) REFERENCES Direcciones (CodigoPostal, Calle, Numero)
 );
 
@@ -411,4 +415,4 @@ CREATE TABLE AseguraA (
 ALTER TABLE
 	Profesores
 ADD
-	CONSTRAINT RefCuit2 FOREIGN KEY (CUITEmpleador) REFERENCES Empleadores (CUIT_CUIL);
+	CONSTRAINT RefCuit2 FOREIGN KEY (CUITEmpleador) REFERENCES Empleadores (CUIT);

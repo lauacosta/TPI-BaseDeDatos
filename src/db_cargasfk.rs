@@ -1,5 +1,5 @@
-//#![allow(dead_code)]
 use crate::db_tablas::*;
+//#![allow(dead_code)]
 use crate::BIND_LIMIT;
 use colored::Colorize;
 use fake::faker::lorem::en::*;
@@ -21,26 +21,24 @@ static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_en
 
 // FIXME: Ver como usar macros para reducir el codigo duplicado.
 pub async fn cargar_asegura_a(
-    profesores: &[Profesores],
     seguros: &[Seguros],
-    beneficiarios: &[Beneficiarios],
+    familiares: &[Familiares],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for s in seguros {
         let mut rng = GLOBAL_RNG.lock().await;
-        let prof = profesores.choose(&mut *rng).unwrap();
-        let beneficiario = beneficiarios.choose(&mut *rng).unwrap();
+        let familiar = familiares.choose(&mut *rng).unwrap();
         let capital_asegurado = rng.gen_range(100000.0..1000000.0);
         let fecha_ingreso: Date = Date().fake();
         match sqlx::query!(
             r#"
             insert into AseguraA(
-                DNIProfesor, DNIBeneficiario, CodigoCompania, CapitalAsegurado, FechaIngreso
+                DNIProfesor, DNIFamiliar , CodigoCompania, CapitalAsegurado, FechaIngreso
             )
             values (?,?,?,?,?)
             "#,
-            prof.dni,
-            beneficiario.dni,
+            familiar.dni_profesor,
+            familiar.dni_familiar,
             s.codigo_compania,
             capital_asegurado,
             fecha_ingreso
@@ -50,7 +48,7 @@ pub async fn cargar_asegura_a(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -98,36 +96,7 @@ pub async fn cargar_reside_en(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
-                continue;
-            }
-        };
-    }
-    Ok(())
-}
-pub async fn cargar_cumple_cargo(
-    profesores: &[Profesores],
-    declaraciones_cargo: &[DeclaracionesDeCargo],
-    pool: &Pool<MySql>,
-) -> Result<(), Box<dyn Error>> {
-    for d in declaraciones_cargo {
-        let prof = profesores.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
-        match sqlx::query!(
-            r#"
-            insert into CumpleCargo(
-                DNIProfesor, IDDeclaracion
-            )
-            values (?,?)
-            "#,
-            prof.dni,
-            d.id_declaracion
-        )
-        .execute(pool)
-        .await
-        {
-            Ok(_) => continue,
-            Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -167,7 +136,7 @@ pub async fn cargar_percibe_en(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -198,7 +167,7 @@ pub async fn cargar_participo_en_reunion(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -206,7 +175,7 @@ pub async fn cargar_participo_en_reunion(
     Ok(())
 }
 
-pub async fn cargar_publico_publicaciones(
+pub async fn cargar_publico(
     publicaciones: &[Publicaciones],
     profesores: &[Profesores],
     pool: &Pool<MySql>,
@@ -215,7 +184,7 @@ pub async fn cargar_publico_publicaciones(
         let prof = profesores.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
         match sqlx::query!(
             r#"
-            insert into PublicoPublicacion(IDPublicacion, DNIProfesor)
+            insert into Publico(IDPublicacion, DNIProfesor)
             values (?,?)
             "#,
             p.id_publicacion,
@@ -226,7 +195,7 @@ pub async fn cargar_publico_publicaciones(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -255,7 +224,7 @@ pub async fn cargar_referencias_bibliograficas(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -280,7 +249,7 @@ pub async fn cargar_realizo_actividad(
 
         match sqlx::query!(
             r#"
-            insert into RealizoActividad (IDActividad, DNIProfesor, Acciones, Dedicacion, Hasta, Desde)
+            insert into RealizoAct (IDActividad, DNIProfesor, Acciones, Dedicacion, Hasta, Desde)
             values (?,?,?,?,?,?)
             "#,
             act.id_actividad,
@@ -295,7 +264,7 @@ pub async fn cargar_realizo_actividad(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -303,7 +272,7 @@ pub async fn cargar_realizo_actividad(
     Ok(())
 }
 
-pub async fn cargar_participa_en_investigacion(
+pub async fn cargar_realiza_investigacion(
     actividades: &[ActividadesInvestigacion],
     profesores: &[Profesores],
     pool: &Pool<MySql>,
@@ -323,7 +292,7 @@ pub async fn cargar_participa_en_investigacion(
 
         match sqlx::query!(
             r#"
-            insert into ParticipaEnInvestigacion (IDInvestigacion, DNIProfesor, Desde, Hasta, Dedicacion)
+            insert into RealizaInves (IDInvestigacion, DNIProfesor, Desde, Hasta, Dedicacion)
             values (?,?,?,?,?)
             "#,
             act.id_investigacion,
@@ -337,7 +306,7 @@ pub async fn cargar_participa_en_investigacion(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
@@ -346,7 +315,7 @@ pub async fn cargar_participa_en_investigacion(
 }
 
 pub async fn cargar_atendio_a(
-    curso_conferencia: &[CursosOConferencias],
+    curso_conferencia: &[CursosConferencias],
     profesores: &[Profesores],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
@@ -374,27 +343,26 @@ pub async fn cargar_atendio_a(
     let max_capacity = BIND_LIMIT / 5;
     if n_items <= max_capacity {
         let mut query_builder: QueryBuilder<MySql> =
-            QueryBuilder::new("insert into AtendioA (Nombre, Institucion, DNI, Desde, Hasta)");
+            QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
         query_builder.push_values(0..n_items, |mut b, idx| {
             let profesor = &profesores[idx];
             let desde = f_desde[idx];
             let hasta = f_hasta[idx];
             let curso = cursos[idx];
 
-            b.push_bind(curso.nombre.clone())
-                .push_bind(curso.institucion.clone())
+            b.push_bind(curso.nombre_curso.clone())
                 .push_bind(profesor.dni.clone())
                 .push_bind(desde)
                 .push_bind(hasta);
         });
 
         if let Err(err) = query_builder.build().execute(pool).await {
-            eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+            eprintln!("{} {}", "[WARN]".bright_yellow(), err);
         }
     } else {
         for chunk in (0..n_items).step_by(max_capacity) {
             let mut query_builder: QueryBuilder<MySql> =
-                QueryBuilder::new("insert into AtendioA (Nombre, Institucion, DNI, Desde, Hasta)");
+                QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
             let end = std::cmp::min(chunk + max_capacity, n_items);
             query_builder.push_values(chunk..end, |mut b, idx| {
                 let profesor = &profesores[idx];
@@ -402,15 +370,47 @@ pub async fn cargar_atendio_a(
                 let hasta = f_hasta[idx];
                 let curso = cursos[idx];
 
-                b.push_bind(curso.nombre.clone())
-                    .push_bind(curso.institucion.clone())
+                b.push_bind(curso.nombre_curso.clone())
                     .push_bind(profesor.dni.clone())
                     .push_bind(desde)
                     .push_bind(hasta);
             });
             if let Err(err) = query_builder.build().execute(pool).await {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
             }
+        }
+    }
+    Ok(())
+}
+
+pub async fn cargar_se_da_titulo(
+    titulos: &[Titulos],
+    instituciones: &[Instituciones],
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    for inst in instituciones {
+        // FIXME: Encontrar una mejor manera de que cada instituciones emita varios titulos.
+        let mut rng = GLOBAL_RNG.lock().await;
+        for _ in 1..=rng.gen_range(1..5) {
+            let titulo = titulos.choose(&mut *rng).unwrap();
+            match sqlx::query!(
+                r#"
+            insert ignore into SeDaTitulo (Titulo, NombreInst, Nivel)
+            values (?,?,?)
+            "#,
+                titulo.titulo,
+                inst.nombre,
+                titulo.nivel,
+            )
+            .execute(pool)
+            .await
+            {
+                Ok(_) => continue,
+                Err(err) => {
+                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
+                    continue;
+                }
+            };
         }
     }
     Ok(())
@@ -429,11 +429,10 @@ pub async fn cargar_posee_titulo(
         let hasta = desde + Duration::days(365 * 5);
         match sqlx::query!(
             r#"
-            insert into PoseeTitulo (DNI, Institucion, Nivel, Titulo, Desde, Hasta)
-            values (?,?,?,?,?,?)
+            insert into PoseeTitulo (DNI, Nivel, Titulo, Desde, Hasta)
+            values (?,?,?,?,?)
             "#,
             prof.dni,
-            t.institucion,
             t.nivel,
             t.titulo,
             desde,
@@ -444,10 +443,76 @@ pub async fn cargar_posee_titulo(
         {
             Ok(_) => continue,
             Err(err) => {
-                eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                 continue;
             }
         };
+    }
+    Ok(())
+}
+
+// TODO: REVISAR SI ES CORRECTO HACER QUE EN EL GENERADOR LOS FAMILIARES TENGAN OBRA SOCIAL.
+pub async fn cargar_beneficia(
+    obras: &[ObrasSociales],
+    familiares: &[Familiares],
+    muestras: usize,
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    let m = GLOBAL_RNG.lock().await.gen_range(0..muestras);
+    for _ in 1..=m{
+        let familiar = familiares.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
+        let obra = obras.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
+        match sqlx::query!(
+            r#"
+            insert into Beneficia (DNIFamiliar, DNIProfesor, IDObraSocial)
+            values (?,?,?)
+            "#,
+            familiar.dni_familiar,
+            familiar.dni_profesor,
+            obra.id_obrasocial
+        )
+        .execute(pool)
+        .await
+        {
+            Ok(_) => continue,
+            Err(err) => {
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
+                continue;
+            }
+        };
+    }
+    Ok(())
+}
+
+
+pub async fn cargar_se_da_idiomas(
+    idiomas: &[&str],
+    instituciones: &[Instituciones],
+    pool: &Pool<MySql>,
+) -> Result<(), Box<dyn Error>> {
+    for inst in instituciones {
+        // FIXME: Encontrar una mejor manera de que cada instituciones enseñe varios idiomas.
+        let mut rng = GLOBAL_RNG.lock().await;
+        for _ in 1..=rng.gen_range(1..3) {
+            let idioma = idiomas.choose(&mut *rng).unwrap();
+            match sqlx::query!(
+                r#"
+            insert ignore into SeDaIdioma (NombreIdioma, NombreInst)
+            values (?,?)
+            "#,
+                inst.nombre,
+                idioma,
+            )
+            .execute(pool)
+            .await
+            {
+                Ok(_) => continue,
+                Err(err) => {
+                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
+                    continue;
+                }
+            };
+        }
     }
     Ok(())
 }
@@ -463,17 +528,15 @@ pub async fn cargar_conoce_idiomas(
         for _ in 1..=rng.gen_range(1..3) {
             let idioma = idiomas.choose(&mut *rng).unwrap();
             let certificacion: String = Word().fake();
-            let institucion: String = Word().fake();
             let nivel: String = Word().fake();
             match sqlx::query!(
                 r#"
-            insert ignore into ConoceIdioma (DNIProfesor, NombreIdioma, Certificacion, Institucion, Nivel)
-            values (?,?,?,?,?)
+            insert ignore into ConoceIdioma (DNIProfesor, NombreIdioma, Certificacion, Nivel)
+            values (?,?,?,?)
             "#,
                 prof.dni,
                 idioma,
                 certificacion,
-                institucion,
                 nivel
             )
             .execute(pool)
@@ -481,7 +544,7 @@ pub async fn cargar_conoce_idiomas(
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                     continue;
                 }
             };
@@ -508,7 +571,7 @@ pub async fn cargar_idiomas(idiomas: &[&str], pool: &Pool<MySql>) -> Result<(), 
             {
                 Ok(_) => continue,
                 Err(err) => {
-                    eprintln!("{} {}", "[Warn]".bright_yellow(), err);
+                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                     continue;
                 }
             };
