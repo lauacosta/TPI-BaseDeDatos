@@ -3,8 +3,8 @@ CREATE TABLE Direcciones (
 	CodigoPostal int unsigned,
 	Calle varchar(100),
 	Numero int unsigned,
-	Localidad varchar(100),
-	Provincia varchar(100),
+	Localidad varchar(100) NOT NULL,
+	Provincia varchar(100) NOT NULL,
 	PRIMARY KEY (CodigoPostal, Calle, Numero)
 );
 

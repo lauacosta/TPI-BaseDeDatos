@@ -1,3 +1,5 @@
 /target
 .env
 /.sqlx
+/dbdata/target
+/dbdata/dbdata_derive/target

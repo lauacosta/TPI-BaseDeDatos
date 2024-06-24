@@ -491,8 +491,8 @@ pub struct Direcciones {
     pub codigo_postal: u32,
     pub calle: String,
     pub numero: u32,
-    pub localidad: Option<String>,
-    pub provincia: Option<String>,
+    pub localidad: String,
+    pub provincia: String,
 }
 
 impl Dummy<Faker> for Direcciones {
@@ -500,21 +500,12 @@ impl Dummy<Faker> for Direcciones {
         let numero = BuildingNumber()
             .fake::<String>()
             .parse()
-            .expect("Fallo en transformar  String a u32 'BuildingNumber()'");
+            .expect("Fallo en transformar String a u32 'BuildingNumber()'");
 
         let calle = StreetName().fake();
         let codigo_postal = rng.gen_range(1000..10000);
-        let tiene_localidad_y_provincia = rng.gen::<bool>();
-        let localidad = if tiene_localidad_y_provincia {
-            Some(CityName().fake())
-        } else {
-            None
-        };
-        let provincia = if tiene_localidad_y_provincia {
-            Some(StateName().fake())
-        } else {
-            None
-        };
+        let localidad = CityName().fake();
+        let provincia = StateName().fake();
 
         Self {
             codigo_postal,
