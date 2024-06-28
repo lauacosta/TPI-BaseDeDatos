@@ -116,12 +116,12 @@ pub struct Contactos {
 impl Contactos {
     pub fn new(profesor: &Profesores) -> Self {
         let dni_profesor = profesor.dni.clone();
-        let medio = ["Celular", "Telefono", "Email"]
+        let tipo = ["Personal", "Empresarial", "Otro"]
             .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
 
-        let tipo = ["Personal", "Empresarial", "Otro"]
+        let medio = ["Celular", "Telefono", "Email"]
             .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
@@ -136,6 +136,12 @@ impl Contactos {
             _ => None,
         };
 
+        match medio.as_str() {
+            "Email" => assert_eq!(None, numero),
+            "Telefono" | "Celular" => assert_eq!(None, direccion),
+            _ => (),
+        };
+
         Self {
             dni_profesor,
             tipo,
@@ -146,17 +152,22 @@ impl Contactos {
     }
 }
 
-#[derive(Debug, DBData)]
+#[derive(Debug, DBData, Clone)]
 pub struct Titulos {
     pub nivel: String,
     pub titulo: String,
 }
 
 impl Dummy<Faker> for Titulos {
-    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, _: &mut R) -> Self {
+    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        let nivel = ["Terciario", "Maestria", "Doctorado", "Tecnicatura"]
+            .choose(rng)
+            .unwrap()
+            .to_string();
+
         Self {
-            nivel: Word().fake(),
-            titulo: Words(1..5).fake::<Vec<String>>().join(" "),
+            nivel,
+            titulo: Words(4..5).fake::<Vec<String>>().join(" "),
         }
     }
 }

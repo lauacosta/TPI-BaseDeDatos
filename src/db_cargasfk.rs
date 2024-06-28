@@ -235,11 +235,14 @@ pub async fn cargar_referencias_bibliograficas(
 pub async fn cargar_realizo_actividad(
     actividades: &[ActividadesExtensionUniversitaria],
     profesores: &[Profesores],
+    muestras: usize,
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    for prof in profesores {
-        let mut rng = GLOBAL_RNG.lock().await;
+    let mut rng = GLOBAL_RNG.lock().await;
+    let m = rng.gen_range(0..muestras);
+    for _ in 1..=m {
         let act = actividades.choose(&mut *rng).unwrap();
+        let prof = profesores.choose(&mut *rng).unwrap();
 
         let acciones: String = Word().fake();
         // FIXME: Esto obviamente es muy ingenuo.
@@ -275,10 +278,13 @@ pub async fn cargar_realizo_actividad(
 pub async fn cargar_realiza_investigacion(
     actividades: &[ActividadesInvestigacion],
     profesores: &[Profesores],
+    muestras: usize,
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    for prof in profesores {
-        let mut rng = GLOBAL_RNG.lock().await;
+    let mut rng = GLOBAL_RNG.lock().await;
+    let m = rng.gen_range(0..muestras);
+    for _ in 1..=m {
+        let prof = profesores.choose(&mut *rng).unwrap();
         let act = actividades.choose(&mut *rng).unwrap();
         let desde: Date = Date().fake();
 
@@ -419,10 +425,47 @@ pub async fn cargar_se_da_titulo(
 pub async fn cargar_posee_titulo(
     titulos: &[Titulos],
     profesores: &[Profesores],
+    muestras: usize,
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
+    let (terciarios, otros): (Vec<Titulos>, Vec<Titulos>) = titulos
+        .iter()
+        .cloned()
+        .partition(|x| x.nivel == "Terciario");
+
     for prof in profesores {
-        let t = titulos.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
+        let t = terciarios.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
+
+        // FIXME: Esto obviamente es muy ingenuo.
+        let desde: Date = Date().fake();
+        let hasta = desde + Duration::days(365 * 5);
+        match sqlx::query!(
+            r#"
+            insert into PoseeTitulo (DNI, Nivel, Titulo, Desde, Hasta)
+            values (?,?,?,?,?)
+            "#,
+            prof.dni,
+            t.nivel,
+            t.titulo,
+            desde,
+            hasta
+        )
+        .execute(pool)
+        .await
+        {
+            Ok(_) => continue,
+            Err(err) => {
+                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
+                continue;
+            }
+        };
+    }
+
+    let mut rng = GLOBAL_RNG.lock().await;
+    let m = rng.gen_range(0..muestras);
+    for _ in 0..=m {
+        let t = otros.choose(&mut *rng).unwrap();
+        let prof = profesores.choose(&mut *rng).unwrap();
 
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
@@ -459,7 +502,7 @@ pub async fn cargar_beneficia(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     let m = GLOBAL_RNG.lock().await.gen_range(0..muestras);
-    for _ in 1..=m{
+    for _ in 1..=m {
         let familiar = familiares.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
         let obra = obras.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
         match sqlx::query!(
@@ -483,7 +526,6 @@ pub async fn cargar_beneficia(
     }
     Ok(())
 }
-
 
 pub async fn cargar_se_da_idiomas(
     idiomas: &[&str],

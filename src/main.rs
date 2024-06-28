@@ -133,6 +133,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "CursosConferencias".bright_green()
     );
 
+    //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_uni = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
         let institucion = instituciones.choose(&mut thread_rng()).unwrap();
@@ -148,6 +149,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "ActividadesExtensionUniversitaria".bright_green()
     );
 
+    //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_inv = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
         let institucion = instituciones.choose(&mut thread_rng()).unwrap();
@@ -270,7 +272,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut ant_pro = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let profesor = profesores .choose(&mut thread_rng()).unwrap();
+        let profesor = profesores.choose(&mut thread_rng()).unwrap();
         let declaracion = dec_car.choose(&mut thread_rng()).unwrap();
         let fila = AntecedentesProfesionales::new(profesor, declaracion);
         fila.insertar_en_db(&pool).await?;
@@ -341,7 +343,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "ConoceIdiomas".bright_green()
     );
 
-    cargar_beneficia(&obras_sociales, &familiares,muestras, &pool).await?;
+    cargar_beneficia(&obras_sociales, &familiares, muestras, &pool).await?;
     cont += 1;
     eprintln!(
         "{} Se ha cargado {} correctamente!",
@@ -349,7 +351,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Beneficia".bright_green()
     );
 
-    cargar_posee_titulo(&titulos, &profesores, &pool).await?;
+    cargar_posee_titulo(&titulos, &profesores, muestras, &pool).await?;
     cont += 1;
     eprintln!(
         "{} Se ha cargado {} correctamente!",
@@ -365,7 +367,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "SeDaTitulos".bright_green()
     );
 
-    cargar_realiza_investigacion(&act_inv, &profesores, &pool).await?;
+    cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool).await?;
 
     cont += 1;
     eprintln!(
@@ -374,7 +376,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "RealizaInves".bright_green()
     );
 
-    cargar_realizo_actividad(&act_uni, &profesores, &pool).await?;
+    cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool).await?;
 
     cont += 1;
     eprintln!(
