@@ -360,9 +360,10 @@ CREATE TABLE Horarios (
     	'Jueves',
     	'Viernes'
 	),
-	RangoHorario varchar(25),
+	HoraInicio time,
+	HoraFin time,
 	NombreCatedra varchar(50),
-	PRIMARY KEY (IDDeclaracion, Dia, RangoHorario),
+	PRIMARY KEY (IDDeclaracion, Dia, HoraInicio, HoraFin),
 	FOREIGN KEY (IDDeclaracion) REFERENCES DeclaracionesDeCargo(IDDeclaracion) 
     ON DELETE CASCADE ON UPDATE CASCADE
 );

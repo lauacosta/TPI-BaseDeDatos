@@ -1,4 +1,4 @@
-use colored::Colorize;
+use crate::GLOBAL_RNG;
 use dbdata::DBData;
 use dbdata_derive::DBData;
 use fake::{
@@ -10,20 +10,17 @@ use fake::{
         lorem::en::*,
         name::en::*,
         phone_number::en::{CellNumber, PhoneNumber},
-        time::en::{Date, Time},
+        time::en::{Date, DateTimeBetween, Time},
     },
     Dummy, Fake, Faker,
 };
-use once_cell::sync::Lazy;
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use rand::{seq::SliceRandom, Rng};
 use sqlx::{
     types::{time::Date, BigDecimal, Type},
     MySql, Pool,
 };
-use std::{error::Error, sync::Mutex};
-use time::Duration;
-
-static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
+use std::error::Error;
+use time::{macros::datetime, Duration};
 
 #[derive(Debug, DBData)]
 pub struct Instituciones {
@@ -65,9 +62,6 @@ pub struct Profesores {
 
 impl Profesores {
     pub fn new(empleador: &Empleadores) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
         let dni = Faker.fake();
         let nombre = FirstName().fake();
         let apellido = LastName().fake();
@@ -78,11 +72,15 @@ impl Profesores {
             "Viudo/a",
             "Conviviente",
         ]
-        .choose(&mut *rng)
+        .choose(&mut *GLOBAL_RNG.lock().unwrap())
         .unwrap()
         .to_string();
-        let sexo = ['M', 'F'].choose(&mut *rng).unwrap().to_string();
+        let sexo = ['M', 'F']
+            .choose(&mut *GLOBAL_RNG.lock().unwrap())
+            .unwrap()
+            .to_string();
 
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let fecha_nacimiento =
             Date::from_ordinal_date(rng.gen_range(1960..=1980), rng.gen_range(1..=30))
                 .expect("Fallo en generar una fecha de nacimiento");
@@ -123,16 +121,13 @@ pub struct Contactos {
 impl Contactos {
     pub fn new(profesor: &Profesores) -> Self {
         let dni_profesor = profesor.dni.clone();
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
         let tipo = ["Personal", "Empresarial", "Otro"]
-            .choose(&mut *rng)
+            .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
 
         let medio = ["Celular", "Telefono", "Email"]
-            .choose(&mut *rng)
+            .choose(&mut *GLOBAL_RNG.lock().unwrap())
             .unwrap()
             .to_string();
 
@@ -192,9 +187,7 @@ pub struct CursosConferencias {
 
 impl CursosConferencias {
     pub fn new(institucion: &Instituciones) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let nombre_inst = institucion.nombre.clone();
         let nombre_curso: String = Name().fake();
         let descripcion = if rng.gen::<bool>() {
@@ -233,9 +226,7 @@ impl AntecedentesDocentes {
         institucion: &Instituciones,
         declaracion: &DeclaracionesDeCargo,
     ) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let nombre_inst = institucion.nombre.clone();
         let id_declaracion = declaracion.id_declaracion;
 
@@ -271,10 +262,7 @@ pub struct ActividadesInvestigacion {
 
 impl ActividadesInvestigacion {
     pub fn new(institucion: &Instituciones) -> Self {
-        let id_investigacion = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex")
-            .gen();
+        let id_investigacion = GLOBAL_RNG.lock().unwrap().gen();
         let nombre_inst = institucion.nombre.clone();
         let categoria = Word().fake();
         let area_ppal: String = Field().fake();
@@ -297,10 +285,7 @@ pub struct ActividadesExtensionUniversitaria {
 
 impl ActividadesExtensionUniversitaria {
     pub fn new(institucion: &Instituciones) -> Self {
-        let id_actividad = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex")
-            .gen();
+        let id_actividad = GLOBAL_RNG.lock().unwrap().gen();
         let nombre_inst = institucion.nombre.clone();
         let cargo: String = Position().fake();
         let categoria = Word().fake();
@@ -324,9 +309,7 @@ pub struct AntecedentesProfesionales {
 
 impl AntecedentesProfesionales {
     pub fn new(profesor: &Profesores, declaracion: &DeclaracionesDeCargo) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let dni_profesor = profesor.dni.clone();
         let id_declaracion = declaracion.id_declaracion;
         let tipo_actividad = Word().fake();
@@ -403,9 +386,7 @@ pub struct DependenciasEmpresas {
 
 impl DependenciasEmpresas {
     pub fn new(profesor: &Profesores, direccion: &Direcciones, obra: &ObrasSociales) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let dni_profesor = profesor.dni.clone();
         let nombre = CompanyName().fake();
         let tipo_actividad = ["Autonomo", "Dependencia"]
@@ -453,9 +434,7 @@ pub struct DocObraSocial {
 
 impl DocObraSocial {
     pub fn new(profesor: &Profesores, obra: &ObrasSociales) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let id_doc = rng.gen();
         let id_obra_social = obra.id_obrasocial;
         let dni_profesor = profesor.dni.clone();
@@ -511,10 +490,7 @@ pub struct DeclaracionesJuradas {
 
 impl DeclaracionesJuradas {
     pub fn new(profesor: &Profesores) -> Self {
-        let id_declaracion = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex")
-            .gen();
+        let id_declaracion = GLOBAL_RNG.lock().unwrap().gen();
         let dni_profesor = profesor.dni.clone();
         let lugar = CityName().fake();
         let fecha = Date().fake();
@@ -571,10 +547,7 @@ pub struct DeclaracionesDeCargo {
 
 impl DeclaracionesDeCargo {
     pub fn new(dep: &DependenciasEmpresas) -> Self {
-        let id_declaracion = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex")
-            .gen();
+        let id_declaracion = GLOBAL_RNG.lock().unwrap().gen();
         let dni_profesor = dep.dni_profesor.clone();
         let nombre_dep = dep.nombre.clone();
         let cumple_horario = Word().fake();
@@ -602,9 +575,7 @@ pub struct Horarios {
 
 impl Horarios {
     pub fn new(declaracion: &DeclaracionesDeCargo) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let id_declaracion = declaracion.id_declaracion;
         let dia = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"]
             .choose(&mut *rng)
@@ -638,9 +609,7 @@ pub struct Empleadores {
 
 impl Empleadores {
     pub fn new(direccion: &Direcciones) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let razon_social = Name().fake();
         let vive_en_departamento = rng.gen::<bool>();
         let piso = if vive_en_departamento {
@@ -711,9 +680,7 @@ pub struct Familiares {
 
 impl Familiares {
     pub fn new(direccion: &Direcciones, profesor: &Profesores) -> Self {
-        let mut rng = GLOBAL_RNG
-            .lock()
-            .expect("Fallo en adquirir el rng dentro del Mutex");
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let dni_familiar = Faker.fake();
         let dni_profesor = profesor.dni.clone();
         let nombre = FirstName().fake();
@@ -783,4 +750,10 @@ impl Dummy<Faker> for Dni {
         let dni: String = (0..8).map(|_| rng.gen_range(0..10).to_string()).collect();
         Self(dni)
     }
+}
+
+fn generar_rangos_horarios() -> String {
+    let tiempo_comienzo: String = Time().fake();
+    let tiempo_fin: String = Time().fake();
+    format!("{tiempo_comienzo} - {tiempo_fin}")
 }

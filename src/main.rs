@@ -2,14 +2,15 @@ use carga_datos::{db_cargasfk::*, db_tablas::*, *};
 use clap::Parser;
 use colored::Colorize;
 use dbdata::DBData;
+use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::SeedableRng;
 use std::error::Error;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 100)]
     cantidad: usize,
 }
 
@@ -72,6 +73,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let obras_sociales = cargar_tabla::<ObrasSociales>(muestras, &pool).await?;
     let mut cont = 7;
 
+    let mut rng = StdRng::from_entropy();
     let idiomas = [
         "Inglés",
         "Español",
@@ -90,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut empleadores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let direccion = direcciones.choose(&mut thread_rng()).unwrap();
+        let direccion = direcciones.choose(&mut rng).unwrap();
         let fila = Empleadores::new(direccion);
         fila.insertar_en_db(&pool).await?;
         empleadores.push(fila);
@@ -105,7 +107,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut instituciones = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let direccion = direcciones.choose(&mut thread_rng()).unwrap();
+        let direccion = direcciones.choose(&mut rng).unwrap();
         let fila = Instituciones::new(direccion);
         fila.insertar_en_db(&pool).await?;
         instituciones.push(fila);
@@ -120,7 +122,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut cur_conf = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let institucion = instituciones.choose(&mut thread_rng()).unwrap();
+        let institucion = instituciones.choose(&mut rng).unwrap();
         let fila = CursosConferencias::new(institucion);
         fila.insertar_en_db(&pool).await?;
         cur_conf.push(fila);
@@ -136,7 +138,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_uni = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let institucion = instituciones.choose(&mut thread_rng()).unwrap();
+        let institucion = instituciones.choose(&mut rng).unwrap();
         let fila = ActividadesExtensionUniversitaria::new(institucion);
         fila.insertar_en_db(&pool).await?;
         act_uni.push(fila);
@@ -152,7 +154,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_inv = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let institucion = instituciones.choose(&mut thread_rng()).unwrap();
+        let institucion = instituciones.choose(&mut rng).unwrap();
         let fila = ActividadesInvestigacion::new(institucion);
         fila.insertar_en_db(&pool).await?;
         act_inv.push(fila);
@@ -167,7 +169,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut profesores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let empleador = empleadores.choose(&mut thread_rng()).unwrap();
+        let empleador = empleadores.choose(&mut rng).unwrap();
         let fila = Profesores::new(empleador);
         fila.insertar_en_db(&pool).await?;
         profesores.push(fila);
@@ -182,7 +184,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut contactos = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
         let fila = Contactos::new(profesor);
         fila.insertar_en_db(&pool).await?;
         contactos.push(fila)
@@ -196,9 +198,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut dep_emp = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let obra = obras_sociales.choose(&mut thread_rng()).unwrap();
-        let direccion = direcciones.choose(&mut thread_rng()).unwrap();
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let obra = obras_sociales.choose(&mut rng).unwrap();
+        let direccion = direcciones.choose(&mut rng).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
         let fila = DependenciasEmpresas::new(profesor, direccion, obra);
         fila.insertar_en_db(&pool).await?;
         dep_emp.push(fila);
@@ -212,8 +214,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut familiares = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let direccion = direcciones.choose(&mut thread_rng()).unwrap();
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let direccion = direcciones.choose(&mut rng).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
         let fila = Familiares::new(direccion, profesor);
         fila.insertar_en_db(&pool).await?;
         familiares.push(fila);
@@ -228,8 +230,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut doc_obras = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let obra = obras_sociales.choose(&mut thread_rng()).unwrap();
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let obra = obras_sociales.choose(&mut rng).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
         let fila = DocObraSocial::new(profesor, obra);
         fila.insertar_en_db(&pool).await?;
         doc_obras.push(fila);
@@ -243,7 +245,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut dec_jur = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
         let fila = DeclaracionesJuradas::new(profesor);
         fila.insertar_en_db(&pool).await?;
         dec_jur.push(fila);
@@ -257,7 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut dec_car = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let dep = dep_emp.choose(&mut thread_rng()).unwrap();
+        let dep = dep_emp.choose(&mut rng).unwrap();
         let fila = DeclaracionesDeCargo::new(dep);
         fila.insertar_en_db(&pool).await?;
         dec_car.push(fila);
@@ -272,8 +274,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut ant_pro = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
-        let declaracion = dec_car.choose(&mut thread_rng()).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
+        let declaracion = dec_car.choose(&mut rng).unwrap();
         let fila = AntecedentesProfesionales::new(profesor, declaracion);
         fila.insertar_en_db(&pool).await?;
         ant_pro.push(fila)
@@ -288,9 +290,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut ant_doc = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let institucion = instituciones.choose(&mut thread_rng()).unwrap();
-        let profesor = profesores.choose(&mut thread_rng()).unwrap();
-        let declaracion = dec_car.choose(&mut thread_rng()).unwrap();
+        let institucion = instituciones.choose(&mut rng).unwrap();
+        let profesor = profesores.choose(&mut rng).unwrap();
+        let declaracion = dec_car.choose(&mut rng).unwrap();
         let fila = AntecedentesDocentes::new(profesor, institucion, declaracion);
         fila.insertar_en_db(&pool).await?;
         ant_doc.push(fila);
@@ -305,7 +307,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut horarios = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
-        let declaraciones = dec_car.choose(&mut thread_rng()).unwrap();
+        let declaraciones = dec_car.choose(&mut rng).unwrap();
         let fila = Horarios::new(declaraciones);
 
         fila.insertar_en_db(&pool).await?;

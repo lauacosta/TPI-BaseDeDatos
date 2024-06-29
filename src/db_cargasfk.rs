@@ -1,5 +1,4 @@
 use crate::db_tablas::*;
-//#![allow(dead_code)]
 use crate::BIND_LIMIT;
 use colored::Colorize;
 use fake::faker::lorem::en::*;
@@ -17,7 +16,7 @@ use std::error::Error;
 use time::Duration;
 use tokio::sync::Mutex;
 
-static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
+pub static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
 
 // FIXME: Ver como usar macros para reducir el codigo duplicado.
 pub async fn cargar_asegura_a(

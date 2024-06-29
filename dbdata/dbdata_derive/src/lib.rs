@@ -30,13 +30,16 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
     let table_name = &ast.ident;
     //let vec_name = syn::Ident::new(&format!("{}Vec", table_name), table_name.span());
     let fields: Fields = match ast.data {
-        syn::Data::Struct(ref data_struct) => data_struct
-            .fields.clone(),
+        syn::Data::Struct(ref data_struct) => data_struct.fields.clone(),
         _ => unreachable!(),
     };
 
     let mut table_values = String::new();
-    let field_names: Vec<String> = fields.clone().into_iter().map(|x| x.ident.unwrap().to_string()).collect();
+    let field_names: Vec<String> = fields
+        .clone()
+        .into_iter()
+        .map(|x| x.ident.unwrap().to_string())
+        .collect();
     for f in &field_names {
         table_values.push_str(&strip_underscore(f).to_lowercase());
         table_values.push(',');
@@ -67,7 +70,10 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     }
 
-    let insert_query = format!("INSERT INTO {} ({}) VALUES ({})", table_name, table_values, empty_fields);
+    let insert_query = format!(
+        "INSERT INTO {} ({}) VALUES ({})",
+        table_name, table_values, empty_fields
+    );
 
     let gen = quote! {
         impl DBData for #table_name {
@@ -79,7 +85,7 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
                 {
                     Ok(_) => (),
                     Err(err) => {
-                        eprintln!("Error: {}", err)
+                        eprintln!("{} {}", "[WARN]".bright_yellow(), err);
                     }
                 };
                 Ok(())

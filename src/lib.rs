@@ -1,17 +1,13 @@
 use colored::Colorize;
 use dbdata::DBData;
 use fake::{Fake, Faker};
-use once_cell::sync::Lazy;
-use rand::{rngs::StdRng, SeedableRng};
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
-use std::{error::Error, sync::Mutex};
+use std::error::Error;
 
 pub mod db_cargasfk;
 pub mod db_tablas;
 
 pub const BIND_LIMIT: usize = 65543;
-
-static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
 
 pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
     dotenvy::dotenv()?;
