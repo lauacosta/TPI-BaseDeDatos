@@ -3,11 +3,13 @@ use std::{error::Error, path::Path};
 use serde::Deserialize;
 
 pub fn cargar_universidades<P: AsRef<Path>>(archivo: P) -> Result<Vec<String>, Box<dyn Error>> {
+    let archivo = std::fs::File::open(archivo)?;
+    let buffer = std::io::BufReader::new(archivo);
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .flexible(true)
         .delimiter(b',')
-        .from_path(archivo)?;
+        .from_reader(buffer);
 
     let mut resultado = vec![];
     for r in reader.records() {
@@ -32,11 +34,13 @@ pub struct Provincia {
 }
 
 pub fn cargar_provincias<P: AsRef<Path>>(archivo: P) -> Result<Vec<Provincia>, Box<dyn Error>> {
+    let archivo = std::fs::File::open(archivo)?;
+    let buffer = std::io::BufReader::new(archivo);
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(true)
         .flexible(true)
         .delimiter(b',')
-        .from_path(archivo)?;
+        .from_reader(buffer);
 
     let mut provincias: Vec<Provincia> = Vec::new();
 

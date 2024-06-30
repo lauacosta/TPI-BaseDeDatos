@@ -196,7 +196,7 @@ impl CursosConferencias {
             .lock()
             .expect("Fallo en adquirir el rng dentro del Mutex");
         let nombre_inst = institucion.nombre.clone();
-        let nombre_curso: String = Name().fake();
+        let nombre_curso = Words(1..5).fake::<Vec<String>>().join(" ");
         let descripcion = if rng.gen::<bool>() {
             Some(Words(1..20).fake::<Vec<String>>().join(" "))
         } else {
