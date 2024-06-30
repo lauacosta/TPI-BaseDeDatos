@@ -1,4 +1,4 @@
-use carga_datos::{db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
+use carga_datos::{datasets::*, db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
 use clap::Parser;
 use dbdata::DBData;
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
@@ -61,9 +61,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let muestras = Args::parse().cantidad;
+    let nombre_universidades = cargar_universidades("./datasets/universidades.csv")?;
+    let provincias = cargar_provincias("./datasets/provincia_localidad_calles.csv")?;
+    let mut rng = StdRng::from_entropy();
 
     // Primero aquellas tablas que no tienen FK.
-    let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
+    let mut direcciones = Vec::with_capacity(muestras);
+    for _ in 1..=muestras {
+        let provincia = provincias.choose(&mut rng).unwrap();
+        let localidad = provincia.localidades.choose(&mut rng).unwrap();
+        let calle = localidad.calles.choose(&mut rng).unwrap();
+        let fila = Direcciones::new(&provincia.nombre, &localidad.nombre, calle);
+        fila.insertar_en_db(&pool).await?;
+        direcciones.push(fila);
+    }
+    notificar_carga(INFO, "Direcciones");
+
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
     let publicaciones = cargar_tabla::<Publicaciones>(muestras, &pool).await?;
     let reuniones = cargar_tabla::<ReunionesCientificas>(muestras, &pool).await?;
@@ -71,7 +84,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let seguros = cargar_tabla::<Seguros>(muestras, &pool).await?;
     let obras_sociales = cargar_tabla::<ObrasSociales>(muestras, &pool).await?;
 
-    let mut rng = StdRng::from_entropy();
     let idiomas = [
         "Inglés",
         "Español",
@@ -96,7 +108,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut instituciones = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
         let direccion = direcciones.choose(&mut rng).unwrap();
-        let fila = Instituciones::new(direccion);
+        let nombre_inst = nombre_universidades.choose(&mut rng).unwrap();
+        let fila = Instituciones::new(direccion, nombre_inst);
         fila.insertar_en_db(&pool).await?;
         instituciones.push(fila);
     }

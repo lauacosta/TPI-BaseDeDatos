@@ -35,14 +35,13 @@ pub struct Instituciones {
 }
 
 impl Instituciones {
-    pub fn new(direccion: &Direcciones) -> Self {
-        let nombre = CompanyName().fake();
+    pub fn new(direccion: &Direcciones, nombre: &str) -> Self {
         let codigo_postal = direccion.codigo_postal;
         let calle = direccion.calle.clone();
         let numero = direccion.numero;
 
         Self {
-            nombre,
+            nombre: nombre.to_string(),
             codigo_postal,
             calle,
             numero,
@@ -538,24 +537,22 @@ pub struct Direcciones {
     pub provincia: String,
 }
 
-impl Dummy<Faker> for Direcciones {
-    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+impl Direcciones {
+    pub fn new(provincia: &str, localidad: &str, calle: &str) -> Self {
+        let mut rng = GLOBAL_RNG.lock().unwrap();
         let numero = BuildingNumber()
             .fake::<String>()
             .parse()
             .expect("Fallo en transformar String a u32 'BuildingNumber()'");
 
-        let calle = StreetName().fake();
         let codigo_postal = rng.gen_range(1000..10000);
-        let localidad = CityName().fake();
-        let provincia = StateName().fake();
 
         Self {
             codigo_postal,
-            calle,
+            calle: calle.to_string(),
             numero,
-            localidad,
-            provincia,
+            localidad: localidad.to_string(),
+            provincia: provincia.to_string(),
         }
     }
 }
@@ -726,7 +723,7 @@ impl Familiares {
             .to_string();
 
         let fecha_nacimiento =
-            Date::from_ordinal_date(rng.gen_range(1960..=1980), rng.gen_range(1..=30))
+            Date::from_ordinal_date(rng.gen_range(1990..=2015), rng.gen_range(1..=30))
                 .expect("Fallo en generar una fecha de nacimiento");
 
         //FIXME: Que tipos de documento pueden ser?

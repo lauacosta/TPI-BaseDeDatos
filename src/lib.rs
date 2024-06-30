@@ -4,6 +4,7 @@ use fake::{Fake, Faker};
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 use std::error::Error;
 
+pub mod datasets;
 pub mod db_cargasfk;
 pub mod db_tablas;
 
