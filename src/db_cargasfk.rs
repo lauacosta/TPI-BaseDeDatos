@@ -1,17 +1,11 @@
-use crate::db_tablas::*;
-use crate::BIND_LIMIT;
-use colored::Colorize;
-use fake::faker::lorem::en::*;
-use fake::faker::time::en::Date;
-use fake::Fake;
+use crate::{db_tablas::*, notificar_carga, Notificacion::INFO, Notificacion::WARN};
+use fake::{
+    faker::{lorem::en::*, time::en::Date},
+    Fake,
+};
 use once_cell::sync::Lazy;
-use rand::rngs::StdRng;
-use rand::seq::SliceRandom;
-use rand::Rng;
-use rand::SeedableRng;
-use sqlx::types::time::Date;
-use sqlx::QueryBuilder;
-use sqlx::{MySql, Pool};
+use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use sqlx::{types::time::Date, MySql, Pool};
 use std::error::Error;
 use time::Duration;
 use tokio::sync::Mutex;
@@ -45,10 +39,9 @@ pub async fn cargar_asegura_a(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -93,10 +86,9 @@ pub async fn cargar_reside_en(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -133,10 +125,9 @@ pub async fn cargar_percibe_en(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -164,13 +155,14 @@ pub async fn cargar_participo_en_reunion(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
+
+    notificar_carga(INFO, "ParticipoEnReunion");
     Ok(())
 }
 
@@ -192,10 +184,9 @@ pub async fn cargar_publico(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -221,10 +212,9 @@ pub async fn cargar_referencias_bibliograficas(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -264,10 +254,9 @@ pub async fn cargar_realizo_actividad(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -309,10 +298,9 @@ pub async fn cargar_realiza_investigacion(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -324,69 +312,100 @@ pub async fn cargar_atendio_a(
     profesores: &[Profesores],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    let n_items = profesores.len();
+    for prof in profesores {
+        let c = curso_conferencia
+            .choose(&mut *GLOBAL_RNG.lock().await)
+            .unwrap();
+        let desde: Date = Date().fake();
+        let hasta = match c.tipo.as_str() {
+            "Curso" => Some(desde + Duration::days(30)),
+            "Conferencia" => Some(desde + Duration::days(1)),
+            _ => None,
+        };
 
-    let mut cursos = Vec::with_capacity(n_items);
-    for _ in 0..n_items {
-        cursos.push(
-            curso_conferencia
-                .choose(&mut *GLOBAL_RNG.lock().await)
-                .unwrap(),
+        match sqlx::query!(
+            r#"
+            insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)
+            values (?,?,?,?)
+            "#,
+            c.nombre_curso,
+            prof.dni,
+            desde,
+            hasta
         )
-    }
-
-    let mut f_desde: Vec<Date> = Vec::with_capacity(n_items);
-    f_desde.extend((0..n_items).map(|_| Date().fake::<Date>()));
-
-    let mut f_hasta = Vec::with_capacity(n_items);
-    f_hasta.extend((0..n_items).map(|idx| match cursos[idx].tipo.as_str() {
-        "Curso" => Some(f_desde[idx] + Duration::days(30)),
-        "Conferencia" => Some(f_desde[idx] + Duration::days(1)),
-        _ => None,
-    }));
-
-    let max_capacity = BIND_LIMIT / 5;
-    if n_items <= max_capacity {
-        let mut query_builder: QueryBuilder<MySql> =
-            QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
-        query_builder.push_values(0..n_items, |mut b, idx| {
-            let profesor = &profesores[idx];
-            let desde = f_desde[idx];
-            let hasta = f_hasta[idx];
-            let curso = cursos[idx];
-
-            b.push_bind(curso.nombre_curso.clone())
-                .push_bind(profesor.dni.clone())
-                .push_bind(desde)
-                .push_bind(hasta);
-        });
-
-        if let Err(err) = query_builder.build().execute(pool).await {
-            eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-        }
-    } else {
-        for chunk in (0..n_items).step_by(max_capacity) {
-            let mut query_builder: QueryBuilder<MySql> =
-                QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
-            let end = std::cmp::min(chunk + max_capacity, n_items);
-            query_builder.push_values(chunk..end, |mut b, idx| {
-                let profesor = &profesores[idx];
-                let desde = f_desde[idx];
-                let hasta = f_hasta[idx];
-                let curso = cursos[idx];
-
-                b.push_bind(curso.nombre_curso.clone())
-                    .push_bind(profesor.dni.clone())
-                    .push_bind(desde)
-                    .push_bind(hasta);
-            });
-            if let Err(err) = query_builder.build().execute(pool).await {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-            }
-        }
+        .execute(pool)
+        .await
+        {
+            Ok(_) => (),
+            Err(err) => notificar_carga(WARN, &err.to_string()),
+        };
     }
     Ok(())
 }
+
+//    let n_items = profesores.len();
+//
+//    let mut cursos = Vec::with_capacity(n_items);
+//    for _ in 0..n_items {
+//        cursos.push(
+//            curso_conferencia
+//                .choose(&mut *GLOBAL_RNG.lock().await)
+//                .unwrap(),
+//        )
+//    }
+//
+//    let mut f_desde: Vec<Date> = Vec::with_capacity(n_items);
+//    f_desde.extend((0..n_items).map(|_| Date().fake::<Date>()));
+//
+//    let mut f_hasta = Vec::with_capacity(n_items);
+//    f_hasta.extend((0..n_items).map(|idx| match cursos[idx].tipo.as_str() {
+//        "Curso" => Some(f_desde[idx] + Duration::days(30)),
+//        "Conferencia" => Some(f_desde[idx] + Duration::days(1)),
+//        _ => None,
+//    }));
+//
+//    let max_capacity = BIND_LIMIT / 5;
+//    if n_items <= max_capacity {
+//        let mut query_builder: QueryBuilder<MySql> =
+//            QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
+//        query_builder.push_values(0..n_items, |mut b, idx| {
+//            let profesor = &profesores[idx];
+//            let desde = f_desde[idx];
+//            let hasta = f_hasta[idx];
+//            let curso = cursos[idx];
+//
+//            b.push_bind(curso.nombre_curso.clone())
+//                .push_bind(profesor.dni.clone())
+//                .push_bind(desde)
+//                .push_bind(hasta);
+//        });
+//
+//        if let Err(err) = query_builder.build().execute(pool).await {
+//            eprintln!("{} {}", "[WARN]".bright_yellow().bold(), err);
+//        }
+//    } else {
+//        for chunk in (0..n_items).step_by(max_capacity) {
+//            let mut query_builder: QueryBuilder<MySql> =
+//                QueryBuilder::new("insert into AtendioA (NombreCurso, DNIProfesor, Desde, Hasta)");
+//            let end = std::cmp::min(chunk + max_capacity, n_items);
+//            query_builder.push_values(chunk..end, |mut b, idx| {
+//                let profesor = &profesores[idx];
+//                let desde = f_desde[idx];
+//                let hasta = f_hasta[idx];
+//                let curso = cursos[idx];
+//
+//                b.push_bind(curso.nombre_curso.clone())
+//                    .push_bind(profesor.dni.clone())
+//                    .push_bind(desde)
+//                    .push_bind(hasta);
+//            });
+//            if let Err(err) = query_builder.build().execute(pool).await {
+//                eprintln!("{} {}", "[WARN]".bright_yellow().bold(), err);
+//            }
+//        }
+//    }
+//    Ok(())
+//}
 
 pub async fn cargar_se_da_titulo(
     titulos: &[Titulos],
@@ -410,10 +429,9 @@ pub async fn cargar_se_da_titulo(
             .execute(pool)
             .await
             {
-                Ok(_) => continue,
+                Ok(_) => (),
                 Err(err) => {
-                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                    continue;
+                    notificar_carga(WARN, &err.to_string());
                 }
             };
         }
@@ -427,13 +445,16 @@ pub async fn cargar_posee_titulo(
     muestras: usize,
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
+    let mut rng = GLOBAL_RNG.lock().await;
     let (terciarios, otros): (Vec<Titulos>, Vec<Titulos>) = titulos
         .iter()
         .cloned()
         .partition(|x| x.nivel == "Terciario");
 
     for prof in profesores {
-        let t = terciarios.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
+        let t = terciarios
+            .choose(&mut *rng)
+            .expect("No hay titulos terciarios en la tabla Titulos.");
 
         // FIXME: Esto obviamente es muy ingenuo.
         let desde: Date = Date().fake();
@@ -452,18 +473,18 @@ pub async fn cargar_posee_titulo(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
 
-    let mut rng = GLOBAL_RNG.lock().await;
     let m = rng.gen_range(0..muestras);
     for _ in 0..=m {
-        let t = otros.choose(&mut *rng).unwrap();
+        let t = otros
+            .choose(&mut *rng)
+            .expect("No hay titulos no terciarios en la tabla Titulos.");
         let prof = profesores.choose(&mut *rng).unwrap();
 
         // FIXME: Esto obviamente es muy ingenuo.
@@ -483,17 +504,15 @@ pub async fn cargar_posee_titulo(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
     Ok(())
 }
 
-// TODO: REVISAR SI ES CORRECTO HACER QUE EN EL GENERADOR LOS FAMILIARES TENGAN OBRA SOCIAL.
 pub async fn cargar_beneficia(
     obras: &[ObrasSociales],
     familiares: &[Familiares],
@@ -516,10 +535,9 @@ pub async fn cargar_beneficia(
         .execute(pool)
         .await
         {
-            Ok(_) => continue,
+            Ok(_) => (),
             Err(err) => {
-                eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                continue;
+                notificar_carga(WARN, &err.to_string());
             }
         };
     }
@@ -532,7 +550,6 @@ pub async fn cargar_se_da_idiomas(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for inst in instituciones {
-        // FIXME: Encontrar una mejor manera de que cada instituciones enseñe varios idiomas.
         let mut rng = GLOBAL_RNG.lock().await;
         for _ in 1..=rng.gen_range(1..3) {
             let idioma = idiomas.choose(&mut *rng).unwrap();
@@ -547,10 +564,9 @@ pub async fn cargar_se_da_idiomas(
             .execute(pool)
             .await
             {
-                Ok(_) => continue,
+                Ok(_) => (),
                 Err(err) => {
-                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                    continue;
+                    notificar_carga(WARN, &err.to_string());
                 }
             };
         }
@@ -564,7 +580,6 @@ pub async fn cargar_conoce_idiomas(
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
     for prof in profesores {
-        // FIXME: Encontrar una mejor manera de que cada profesor conozca al menos dos idiomas.
         let mut rng = GLOBAL_RNG.lock().await;
         for _ in 1..=rng.gen_range(1..3) {
             let idioma = idiomas.choose(&mut *rng).unwrap();
@@ -583,10 +598,9 @@ pub async fn cargar_conoce_idiomas(
             .execute(pool)
             .await
             {
-                Ok(_) => continue,
+                Ok(_) => (),
                 Err(err) => {
-                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                    continue;
+                    notificar_carga(WARN, &err.to_string());
                 }
             };
         }
@@ -610,10 +624,9 @@ pub async fn cargar_idiomas(idiomas: &[&str], pool: &Pool<MySql>) -> Result<(), 
             .execute(pool)
             .await
             {
-                Ok(_) => continue,
+                Ok(_) => (),
                 Err(err) => {
-                    eprintln!("{} {}", "[WARN]".bright_yellow(), err);
-                    continue;
+                    notificar_carga(WARN, &err.to_string());
                 }
             };
         }

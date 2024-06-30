@@ -1,3 +1,4 @@
+use crate::{notificar_carga, Notificacion::*};
 use colored::Colorize;
 use dbdata::DBData;
 use dbdata_derive::DBData;
@@ -243,7 +244,7 @@ impl AntecedentesDocentes {
         let dni_profesor = profesor.dni.clone();
         let desde = profesor.fecha_nacimiento + Duration::days(rng.gen_range(30..50) * 365);
         let hasta = if rng.gen::<bool>() {
-            Some(desde + Duration::days(rng.gen_range(1..10) * 365))
+            Some(desde + Duration::days(rng.gen_range(1..30) * 365))
         } else {
             None
         };
@@ -703,6 +704,7 @@ pub struct Familiares {
     pub porcentaje: BigDecimal,
     pub piso: Option<u32>,
     pub departamento: Option<u8>,
+
     //WARN: FK de Direcciones
     pub numero_dir: u32,
     pub codigo_postal: u32,
@@ -722,10 +724,14 @@ impl Familiares {
             .choose(&mut *rng)
             .unwrap()
             .to_string();
-        let fecha_nacimiento = Date().fake();
+
+        let fecha_nacimiento =
+            Date::from_ordinal_date(rng.gen_range(1960..=1980), rng.gen_range(1..=30))
+                .expect("Fallo en generar una fecha de nacimiento");
 
         //FIXME: Que tipos de documento pueden ser?
         let tipo_documento = Word().fake();
+
         // FIXME: Va a ocurrir que entre los beneficiarios o no cubriran el 100% o sobrepasaran el
         // 100%, por como está definido esto.
         let porcentaje = BigDecimal::new(rng.gen_range(1..2).into(), rng.gen_range(1..27));
@@ -763,9 +769,9 @@ impl Familiares {
     }
 }
 
+// https://servicioscf.afip.gob.ar/publico/abc/ABCpaso2.aspx?id_nivel1=3036&id_nivel2=3040&p=Conceptos%20b%C3%A1sicos
 #[derive(Debug, Clone, Type)]
 #[sqlx(transparent)]
-// https://servicioscf.afip.gob.ar/publico/abc/ABCpaso2.aspx?id_nivel1=3036&id_nivel2=3040&p=Conceptos%20b%C3%A1sicos
 pub struct Cuil(String);
 impl Cuil {
     fn new(dni: &Dni) -> Self {

@@ -3,3 +3,4 @@
 /.sqlx
 /dbdata/target
 /dbdata/dbdata_derive/target
+test.sql

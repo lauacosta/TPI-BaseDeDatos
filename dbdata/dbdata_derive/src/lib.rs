@@ -85,7 +85,7 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
                 {
                     Ok(_) => (),
                     Err(err) => {
-                        eprintln!("{} {}", "[WARN]".bright_yellow(), err);
+                        notificar_carga(WARN, &err.to_string());
                     }
                 };
                 Ok(())

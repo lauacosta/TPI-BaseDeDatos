@@ -260,7 +260,7 @@ CREATE TABLE Familiares (
     CHECK (DNIFamiliar REGEXP '^[0-9]{8}$'),
 	Nombre varchar(50) NOT NULL,
 	Apellido varchar(50) NOT NULL,
-	Parentesco varchar (25) NOT NULL,
+	Parentesco enum ('Cónyuge', 'Hijo', 'Padre', 'Pareja', 'Hermano') NOT NULL,
 	FechaNacimiento date NOT NULL,
 	TipoDocumento varchar(50) NOT NULL,
 	Porcentaje Numeric NOT NULL,

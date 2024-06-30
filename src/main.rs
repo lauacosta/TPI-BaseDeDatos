@@ -1,58 +1,59 @@
-use carga_datos::{db_cargasfk::*, db_tablas::*, *};
+use carga_datos::{db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
 use clap::Parser;
-use colored::Colorize;
 use dbdata::DBData;
-use rand::rngs::StdRng;
-use rand::seq::SliceRandom;
-use rand::SeedableRng;
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 use std::error::Error;
+
+/* Orden de carga hasta ahora:
+- Primero aquellas tablas que no tienen FKs.
+    01. Direcciones
+    02. Titulos
+    03. Publicaciones
+    04. Reuniones
+    05. Percepciones
+    06. Seguros
+    07. ObrasSociales
+    08. Idiomas
+
+- Segundo, aquellas tablas que contienen FKs.
+
+    09. Empleadores
+    10. Instituciones
+    11. CursosConferencias
+    12. ActividadesExtensionUniversitaria
+    13. ActividadesInvestigacion
+    14. Profesores
+    15. Contactos
+    16. DependenciasEmpresas
+    17. Familiares
+    18. DocObraSocial
+    19. DeclaracionesJuradas
+    20. DeclaracionesDeCargo
+    21. AntecedentesProfesionales
+    22. AntecedentesDocentes
+    23. Horarios
+    24. AtendioA
+    25. SeDaIdiomas
+    26. ConoceIdiomas
+    27. Beneficia
+    28. PoseeTitulo
+    29. SeDaTitulo
+    30. RealizaInvestigacion
+    31. RealizoActividad
+    32. ReferenciasBibliograficas
+    33. Publico
+    34. ParticipoEnReunion
+    35. PercibeEn
+    36. ResideEn
+    37. AseguraA
+*/
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value_t = 100)]
+    #[arg(short, long, default_value_t = 1000)]
     cantidad: usize,
 }
-
-/* Orden de carga hasta ahora:
-Primero aquellas tablas que no tienen FKs.
-    1. Idiomas
-    2. Direcciones
-    3. Titulos
-    4. CursosOConferencias
-    5. ActividadesInvestigacion
-    6. ActividadesExtensionUniversitaria
-    7. Publicaciones
-    8. ReunionesCientificas
-    9. Percepciones
-    10. Seguros
-*/
-
-/* Segundo, aquellas tablas que contienen FKs.
-    11. Empleadores
-    12. Profesores
-    13. Contactos
-    14. ConoceIdiomas
-    15. PoseeTitulo
-    16. AtendioA
-    17. AntecedentesDocentes
-    18. ParticipaEnInvestigacion
-    19. RealizoActividad
-    20. AntecedentesProfesionales
-    21. ReferenciaBibliografica
-    22. PublicoPublicacion
-    23. ParticipoEnReunion
-    24. DependenciasOEmpresas
-    25. Beneficiarios
-    26. ObrasSociales
-    27. PercibeEn
-    28. DeclaracionesJuradas
-    29. DeclaracionesDeCargo
-    30. Horarios
-    31. CumpleCargo
-    32. ResideEn
-    33. AseguraA
-*/
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -60,10 +61,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let muestras = Args::parse().cantidad;
-    let start = std::time::Instant::now();
 
     // Primero aquellas tablas que no tienen FK.
-    // FIXME: Corregir las colisiones contra la bd?
     let direcciones = cargar_tabla::<Direcciones>(muestras, &pool).await?;
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
     let publicaciones = cargar_tabla::<Publicaciones>(muestras, &pool).await?;
@@ -71,7 +70,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let percepciones = cargar_tabla::<Percepciones>(muestras, &pool).await?;
     let seguros = cargar_tabla::<Seguros>(muestras, &pool).await?;
     let obras_sociales = cargar_tabla::<ObrasSociales>(muestras, &pool).await?;
-    let mut cont = 7;
 
     let mut rng = StdRng::from_entropy();
     let idiomas = [
@@ -83,12 +81,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Italiano",
     ];
     cargar_idiomas(&idiomas, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Idiomas".bright_green()
-    );
+    notificar_carga(INFO, "Idiomas");
 
     let mut empleadores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -98,12 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         empleadores.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Empleadores".bright_green()
-    );
+    notificar_carga(INFO, "Empleadores");
 
     let mut instituciones = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -113,12 +101,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         instituciones.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Instituciones".bright_green()
-    );
+    notificar_carga(INFO, "Instituciones");
 
     let mut cur_conf = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -128,12 +111,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         cur_conf.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "CursosConferencias".bright_green()
-    );
+    notificar_carga(INFO, "CursosConferencias");
 
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_uni = Vec::with_capacity(muestras);
@@ -144,12 +122,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         act_uni.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ActividadesExtensionUniversitaria".bright_green()
-    );
+    notificar_carga(INFO, "ActividadesExtensionUniversitaria");
 
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
     let mut act_inv = Vec::with_capacity(muestras);
@@ -160,12 +133,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         act_inv.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ActividadesInvestigacion".bright_green()
-    );
+    notificar_carga(INFO, "ActividadesInvestigacion");
 
     let mut profesores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -175,12 +143,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         profesores.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Profesores".bright_green()
-    );
+    notificar_carga(INFO, "Profesores");
 
     let mut contactos = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -189,12 +152,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         contactos.push(fila)
     }
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Contactos".bright_green()
-    );
+    notificar_carga(INFO, "Contactos");
 
     let mut dep_emp = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -205,12 +163,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         dep_emp.push(fila);
     }
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "DependenciasEmpresas".bright_green()
-    );
+    notificar_carga(INFO, "DependenciasEmpresas");
 
     let mut familiares = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -221,12 +174,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         familiares.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Familiares".bright_green()
-    );
+    notificar_carga(INFO, "Familiares");
 
     let mut doc_obras = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -236,12 +184,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         doc_obras.push(fila);
     }
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "DocObraSocial".bright_green()
-    );
+    notificar_carga(INFO, "DocObraSocial");
 
     let mut dec_jur = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -250,12 +193,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         dec_jur.push(fila);
     }
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "DeclaracionesJuradas".bright_green()
-    );
+    notificar_carga(INFO, "DeclaracionesJuradas");
 
     let mut dec_car = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -265,12 +203,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         dec_car.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "DeclaracionesDeCargo".bright_green()
-    );
+    notificar_carga(INFO, "DeclaracionesDeCargo");
 
     let mut ant_pro = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -281,12 +214,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ant_pro.push(fila)
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "AntecedentesProfesionales".bright_green()
-    );
+    notificar_carga(INFO, "AntecedentesProfesionales");
 
     let mut ant_doc = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -298,12 +226,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ant_doc.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "AntecedentesDocentes".bright_green()
-    );
+    notificar_carga(INFO, "AntecedentesDocentes");
 
     let mut horarios = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -314,137 +237,50 @@ async fn main() -> Result<(), Box<dyn Error>> {
         horarios.push(fila);
     }
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Horarios".bright_green()
-    );
+    notificar_carga(INFO, "Horarios");
 
     cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "AtendioA".bright_green()
-    );
+    notificar_carga(INFO, "AtendioA");
 
     cargar_se_da_idiomas(&idiomas, &instituciones, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "SeDaIdioma".bright_green()
-    );
+    notificar_carga(INFO, "SeDaIdioma");
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ConoceIdiomas".bright_green()
-    );
+    notificar_carga(INFO, "ConoceIdiomas");
 
     cargar_beneficia(&obras_sociales, &familiares, muestras, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "Beneficia".bright_green()
-    );
+    notificar_carga(INFO, "Beneficia");
 
     cargar_posee_titulo(&titulos, &profesores, muestras, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "PoseeTitulos".bright_green()
-    );
+    notificar_carga(INFO, "PoseeTitulos");
 
     cargar_se_da_titulo(&titulos, &instituciones, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "SeDaTitulos".bright_green()
-    );
+    notificar_carga(INFO, "SeDaTitulos");
 
     cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool).await?;
-
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "RealizaInves".bright_green()
-    );
+    notificar_carga(INFO, "RealizaInves");
 
     cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool).await?;
 
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "RealizoAct".bright_green()
-    );
+    notificar_carga(INFO, "RealizoAct");
 
     cargar_referencias_bibliograficas(&publicaciones, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ReferenciasBibliograficas".bright_green()
-    );
+    notificar_carga(INFO, "ReferenciasBibliograficas");
 
     cargar_publico(&publicaciones, &profesores, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "PublicoPublicacion".bright_green()
-    );
+    notificar_carga(INFO, "PublicoPublicacion");
 
     cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ParticipoEnReunion".bright_green()
-    );
+    notificar_carga(INFO, "ParticipoEnReunion");
 
     cargar_percibe_en(&percepciones, &profesores, &pool).await?;
-
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "PercibeEn".bright_green()
-    );
+    notificar_carga(INFO, "PercibeEn");
 
     cargar_reside_en(&profesores, &direcciones, &pool).await?;
-
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "ResideEn".bright_green()
-    );
+    notificar_carga(INFO, "ResideEn");
 
     cargar_asegura_a(&seguros, &familiares, &pool).await?;
-
-    cont += 1;
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".bright_green(),
-        "AseguraA".bright_green()
-    );
-
-    cont += 1;
-    eprintln!(
-        "{} Se han cargado aproximadamente {} registros en {} segundos.",
-        "[INFO]".bright_green(),
-        (muestras * cont).to_string().bright_green(),
-        start.elapsed().as_secs().to_string().bright_green()
-    );
+    notificar_carga(INFO, "AseguraA");
 
     Ok(())
 }

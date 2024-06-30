@@ -31,10 +31,30 @@ where
     }
 
     let nombre_tabla = std::any::type_name::<T>().rsplit("::").next().unwrap();
-    eprintln!(
-        "{} Se ha cargado {} correctamente!",
-        "[INFO]".to_string().bright_green(),
-        nombre_tabla.bright_green()
-    );
+    notificar_carga(Notificacion::INFO, nombre_tabla);
     Ok(tablas)
+}
+
+pub enum Notificacion {
+    INFO,
+    WARN,
+    ERROR,
+}
+
+pub fn notificar_carga(tipo: Notificacion, data: &str) {
+    let msg = match tipo {
+        Notificacion::INFO => format!(
+            "{} Se ha cargado {} correctamente!",
+            "[INFO]".bright_green().bold(),
+            data.bright_green().bold()
+        ),
+        Notificacion::WARN => format!("{} {}", "[WARN]".bright_yellow().bold(), data),
+        Notificacion::ERROR => format!("{} {}", "[ERROR]".bright_red().bold(), data),
+    };
+
+    eprintln!(
+        "[{}] {}",
+        chrono::Local::now().format("%H:%M:%S").to_string(),
+        msg
+    )
 }

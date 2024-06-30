@@ -30,5 +30,5 @@ $ cargo run
 
 // Podes compilarlo y ejecutarlo haciendo:
 $ cargo build --release
-$ ./target/release/carga_datos
+$ ./target/release/entrega -c 1000  // Con -c se indica la cantidad de registros a generar por tabla.
 ```
