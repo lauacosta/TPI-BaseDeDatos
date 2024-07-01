@@ -4,7 +4,7 @@ use std::{error::Error, path::Path};
 use serde::Deserialize;
 
 /// Extrae los datos del dataset y los almacena en un vector String
-pub fn cargar_universidades<P: AsRef<Path>>(archivo: P) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn cargar_de_csv<P: AsRef<Path>>(archivo: P) -> Result<Vec<String>, Box<dyn Error>> {
     let archivo = std::fs::File::open(archivo)?;
     let buffer = std::io::BufReader::new(archivo);
     let mut reader = csv::ReaderBuilder::new()

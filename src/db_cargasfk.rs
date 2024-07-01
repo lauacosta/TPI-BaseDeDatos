@@ -516,7 +516,7 @@ pub async fn cargar_beneficia(
 
 /// Carga los datos generados a la tabla SeDaIdiomas.
 pub async fn cargar_se_da_idiomas(
-    idiomas: &[&str],
+    idiomas: &[String],
     instituciones: &[Instituciones],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
@@ -549,7 +549,7 @@ pub async fn cargar_se_da_idiomas(
 
 /// Carga los datos generados a la tabla ConoceIdiomas.
 pub async fn cargar_conoce_idiomas(
-    idiomas: &[&str],
+    idiomas: &[String],
     profesores: &[Profesores],
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
@@ -609,7 +609,7 @@ pub async fn cargar_conoce_idiomas(
 }
 
 /// Carga los datos generados a la tabla Idiomas.
-pub async fn cargar_idiomas(idiomas: &[&str], pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
+pub async fn cargar_idiomas(idiomas: &[String], pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
     let row_count: i64 = sqlx::query_scalar("select count(*) FROM Idiomas")
         .fetch_one(pool)
         .await?;

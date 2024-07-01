@@ -66,8 +66,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let muestras = Args::parse().cantidad;
-    let nombre_universidades = cargar_universidades("./datasets/universidades.csv")?;
+    let nombre_universidades = cargar_de_csv("./datasets/universidades.csv")?;
     let provincias = cargar_provincias("./datasets/provincia_localidad_calles.csv")?;
+    let idiomas = cargar_de_csv("./datasets/idiomas.csv")?;
     let mut rng = StdRng::from_entropy();
 
     // Primero aquellas tablas que no tienen FK.
@@ -93,16 +94,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     dasuten.insertar_en_db(&pool).await?;
     obras_sociales.push(dasuten);
 
-    let idiomas = [
-        "Inglés",
-        "Español",
-        "Portugues",
-        "Mandarín",
-        "Japones",
-        "Italiano",
-    ];
     cargar_idiomas(&idiomas, &pool).await?;
-    notificar_carga(INFO, "Idiomas");
 
     let mut empleadores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -114,16 +106,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     notificar_carga(INFO, "Empleadores");
 
+    // WARN: Como toma los primeros n universidades, no podrá insertarse después de ejecutarse por
+    // primera vez sobre la misma base de datos.
     let mut instituciones = Vec::with_capacity(muestras);
-    for i in 1..=muestras {
+    for nombre in nombre_universidades.iter().take(muestras) {
         let direccion = direcciones.choose(&mut rng).unwrap();
-        let nombre_inst = if nombre_universidades.len() > i {
-            nombre_universidades[i].clone()
-        } else {
-            break;
+        let fila = Instituciones::new(direccion, &nombre);
+        match fila.insertar_en_db(&pool).await {
+            Ok(_) => (),
+            Err(err) => {
+                eprintln!("{err}");
+                dbg!("{:?}", direccion, &fila);
+            }
         };
-        let fila = Instituciones::new(direccion, &nombre_inst);
-        fila.insertar_en_db(&pool).await?;
         instituciones.push(fila);
     }
 
@@ -172,9 +167,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     notificar_carga(INFO, "Profesores");
 
     let mut contactos = Vec::with_capacity(muestras);
-    for _ in 1..=muestras {
-        let profesor = profesores.choose(&mut rng).unwrap();
-        let fila = Contactos::new(profesor);
+    for prof in profesores.iter() {
+        let fila = Contactos::new(prof);
         fila.insertar_en_db(&pool).await?;
         contactos.push(fila)
     }

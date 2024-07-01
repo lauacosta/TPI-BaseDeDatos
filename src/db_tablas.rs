@@ -245,7 +245,7 @@ impl AntecedentesDocentes {
         let nombre_inst = institucion.nombre.clone();
         let id_declaracion = declaracion.id_declaracion;
 
-        let unidad_academica = Word().fake();
+        let unidad_academica = Words(1..3).fake::<Vec<String>>().join(" ");
         let dni_profesor = profesor.dni.clone();
         let desde = profesor.fecha_nacimiento + Duration::days(rng.gen_range(30..50) * 365);
         let hasta = if rng.gen::<bool>() {
