@@ -18,6 +18,7 @@ La estructura de la aplicación, ignorando la carpeta para los macros, es la sig
    ├── Cargo.toml
    ├── datasets
    │  ├── provincia_localidad_calles.csv
+   │  ├── idiomas.csv
    │  └── universidades.csv
    ├── migrations
    │  └── 20240606032226_cargar_tablas.sql
