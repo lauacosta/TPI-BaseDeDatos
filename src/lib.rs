@@ -1,3 +1,4 @@
+// Autor: Acosta Quintana, Lautaro
 use colored::Colorize;
 use dbdata::DBData;
 use fake::{Fake, Faker};
@@ -10,16 +11,20 @@ pub mod db_tablas;
 
 pub const BIND_LIMIT: usize = 65543;
 
+/// Establece una conexión con la base de datos utilizando el URL definido en las variables del
+/// ambiente.
 pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
-    dotenvy::dotenv()?;
+    dotenvy::dotenv().expect("Archivo .env no pudo se encontrado.");
     let db_url =
-        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'");
+        std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'.");
     Ok(MySqlPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(4))
         .connect(&db_url)
         .await?)
 }
 
+/// Genera e inserta dentro de la base de datos los datos generados completamente de manera
+/// pseudoaleatoria.
 pub async fn cargar_tabla<T>(muestras: usize, pool: &Pool<MySql>) -> Result<Vec<T>, Box<dyn Error>>
 where
     T: DBData + fake::Dummy<fake::Faker>,
@@ -36,12 +41,14 @@ where
     Ok(tablas)
 }
 
+/// Modela los distintos tipos de notificación dentro del programa.
 pub enum Notificacion {
     INFO,
     WARN,
     ERROR,
 }
 
+/// Muestra un mensaje a traves de STDERR.
 pub fn notificar_carga(tipo: Notificacion, data: &str) {
     let msg = match tipo {
         Notificacion::INFO => format!(

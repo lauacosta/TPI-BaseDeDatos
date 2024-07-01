@@ -1,3 +1,4 @@
+// Autor: Acosta Quintana, Lautaro
 use crate::{notificar_carga, Notificacion::*};
 use colored::Colorize;
 use dbdata::DBData;
@@ -26,6 +27,7 @@ use time::Duration;
 
 static GLOBAL_RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| Mutex::new(StdRng::from_entropy()));
 
+/// Representa a la Tabla Instituciones.
 #[derive(Debug, DBData)]
 pub struct Instituciones {
     pub nombre: String,
@@ -48,7 +50,7 @@ impl Instituciones {
         }
     }
 }
-
+/// Representa a la tabla Profesores.
 #[derive(Debug, DBData)]
 pub struct Profesores {
     pub dni: Dni,
@@ -111,6 +113,7 @@ impl Profesores {
     }
 }
 
+/// Representa a la tabla Contactos.
 #[derive(Debug, DBData)]
 pub struct Contactos {
     pub dni_profesor: Dni, //WARN: FK de Profesores
@@ -162,6 +165,7 @@ impl Contactos {
     }
 }
 
+/// Representa a la tabla Titulos.
 #[derive(Debug, DBData, Clone)]
 pub struct Titulos {
     pub nivel: String,
@@ -182,6 +186,7 @@ impl Dummy<Faker> for Titulos {
     }
 }
 
+/// Representa a la tabla CursosConferencias.
 #[derive(Debug, DBData)]
 pub struct CursosConferencias {
     pub nombre_inst: String,
@@ -196,7 +201,7 @@ impl CursosConferencias {
             .lock()
             .expect("Fallo en adquirir el rng dentro del Mutex");
         let nombre_inst = institucion.nombre.clone();
-        let nombre_curso = Words(1..5).fake::<Vec<String>>().join(" ");
+        let nombre_curso = Words(3..5).fake::<Vec<String>>().join(" ");
         let descripcion = if rng.gen::<bool>() {
             Some(Words(1..20).fake::<Vec<String>>().join(" "))
         } else {
@@ -216,6 +221,7 @@ impl CursosConferencias {
     }
 }
 
+/// Representa a la tabla AntecedentesDocentes.
 #[derive(Debug, DBData)]
 pub struct AntecedentesDocentes {
     pub nombre_inst: String,
@@ -261,6 +267,7 @@ impl AntecedentesDocentes {
     }
 }
 
+/// Representa a la tabla ActividadesInvestigacion.
 #[derive(Debug, Dummy, DBData)]
 pub struct ActividadesInvestigacion {
     pub id_investigacion: u32,
@@ -287,6 +294,7 @@ impl ActividadesInvestigacion {
     }
 }
 
+/// Representa a la tabla ActividadesExtensionUniversitaria.
 #[derive(Debug, DBData)]
 pub struct ActividadesExtensionUniversitaria {
     pub id_actividad: u32,
@@ -313,6 +321,7 @@ impl ActividadesExtensionUniversitaria {
     }
 }
 
+/// Representa a la tabla AntecedentesProfesionales.
 #[derive(Debug, DBData)]
 pub struct AntecedentesProfesionales {
     pub dni_profesor: Dni, //WARN: FK de Profesores
@@ -342,6 +351,7 @@ impl AntecedentesProfesionales {
     }
 }
 
+/// Representa a la tabla Publicaciones.
 #[derive(Debug, DBData)]
 pub struct Publicaciones {
     pub id_publicacion: u32,
@@ -372,6 +382,7 @@ impl Dummy<Faker> for Publicaciones {
     }
 }
 
+/// Representa a la tabla ReunionesCientificas.
 #[derive(Debug, DBData)]
 pub struct ReunionesCientificas {
     pub titulo: String,
@@ -388,6 +399,7 @@ impl Dummy<Faker> for ReunionesCientificas {
     }
 }
 
+/// Representa a la tabla DependenciasEmpresas.
 #[derive(Debug, DBData)]
 pub struct DependenciasEmpresas {
     pub dni_profesor: Dni, //WARN: FK de Profesores
@@ -432,6 +444,7 @@ impl DependenciasEmpresas {
     }
 }
 
+/// Representa a la tabla ObrasSociales.
 #[derive(Debug, Dummy, DBData)]
 pub struct ObrasSociales {
     #[dummy(faker = "CompanyName()")]
@@ -440,6 +453,16 @@ pub struct ObrasSociales {
     pub id_obrasocial: u32,
 }
 
+impl ObrasSociales {
+    pub fn new(nombre_obra: &str, id_obrasocial: u32) -> Self {
+        Self {
+            nombre_obra: nombre_obra.to_string(),
+            id_obrasocial,
+        }
+    }
+}
+
+/// Representa a la tabla DocObraSocial.
 #[derive(Debug, DBData)]
 pub struct DocObraSocial {
     pub id_doc: u32,
@@ -482,6 +505,7 @@ impl DocObraSocial {
     }
 }
 
+/// Representa a la tabla Percepciones.
 #[derive(Debug, DBData)]
 pub struct Percepciones {
     pub institucion_caja: String,
@@ -501,6 +525,7 @@ impl Dummy<Faker> for Percepciones {
     }
 }
 
+/// Representa a la tabla DeclaracionesJuradas.
 #[derive(Debug, DBData)]
 pub struct DeclaracionesJuradas {
     pub id_declaracion: u32,
@@ -528,6 +553,7 @@ impl DeclaracionesJuradas {
     }
 }
 
+/// Representa a la tabla Direcciones.
 #[derive(Debug, DBData)]
 pub struct Direcciones {
     pub codigo_postal: u32,
@@ -557,6 +583,7 @@ impl Direcciones {
     }
 }
 
+/// Representa a la tabla DeclaracionesDeCargo.
 #[derive(Debug, DBData)]
 pub struct DeclaracionesDeCargo {
     pub dni_profesor: Dni,
@@ -589,6 +616,7 @@ impl DeclaracionesDeCargo {
     }
 }
 
+/// Representa a la tabla Horarios.
 #[derive(Debug, DBData)]
 pub struct Horarios {
     pub id_declaracion: u32, //WARN: FK de DeclaracionesDeCargo
@@ -622,6 +650,7 @@ impl Horarios {
     }
 }
 
+/// Representa a la tabla Empleadores.
 #[derive(Debug, DBData)]
 pub struct Empleadores {
     pub cuit: Cuil,
@@ -665,6 +694,7 @@ impl Empleadores {
     }
 }
 
+/// Representa a la tabla Seguros.
 #[derive(Debug, DBData)]
 pub struct Seguros {
     pub codigo_compania: u32,
@@ -689,6 +719,7 @@ impl Dummy<Faker> for Seguros {
     }
 }
 
+/// Representa a la tabla Familiares.
 #[derive(Debug, DBData)]
 pub struct Familiares {
     pub dni_profesor: Dni,

@@ -1,14 +1,17 @@
+// Autor: Acosta Quintana, Lautaro
 use std::{error::Error, path::Path};
 
 use serde::Deserialize;
 
+/// Extrae los datos del dataset y los almacena en un vector String
 pub fn cargar_universidades<P: AsRef<Path>>(archivo: P) -> Result<Vec<String>, Box<dyn Error>> {
     let archivo = std::fs::File::open(archivo)?;
     let buffer = std::io::BufReader::new(archivo);
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .flexible(true)
-        .delimiter(b',')
+        .delimiter(b';')
+        .trim(csv::Trim::All)
         .from_reader(buffer);
 
     let mut resultado = vec![];
@@ -21,18 +24,21 @@ pub fn cargar_universidades<P: AsRef<Path>>(archivo: P) -> Result<Vec<String>, B
     Ok(resultado)
 }
 
+/// Modela una Localidad con nombre y las calles que le pertenecen.
 #[derive(Debug, Deserialize)]
 pub struct Localidad {
     pub nombre: String,
     pub calles: Vec<String>,
 }
 
+/// Modela una Provincia con su nombre y sus localidades.
 #[derive(Debug, Deserialize)]
 pub struct Provincia {
     pub nombre: String,
     pub localidades: Vec<Localidad>,
 }
 
+/// Extrae los datos del dataset y los almacena en un vector String
 pub fn cargar_provincias<P: AsRef<Path>>(archivo: P) -> Result<Vec<Provincia>, Box<dyn Error>> {
     let archivo = std::fs::File::open(archivo)?;
     let buffer = std::io::BufReader::new(archivo);
@@ -40,6 +46,7 @@ pub fn cargar_provincias<P: AsRef<Path>>(archivo: P) -> Result<Vec<Provincia>, B
         .has_headers(true)
         .flexible(true)
         .delimiter(b',')
+        .trim(csv::Trim::All)
         .from_reader(buffer);
 
     let mut provincias: Vec<Provincia> = Vec::new();

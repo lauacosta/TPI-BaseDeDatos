@@ -1,7 +1,9 @@
 [package]
 name = "carga_datos"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+authors = ["Acosta Quintana, lautaro <acostaquintanalautaro@gmail.com>"]
+repository = "https://github.com/lauacosta/BaseDeDatos"
 
 [[bin]]
 name = "entrega"

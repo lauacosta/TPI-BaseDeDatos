@@ -1,7 +1,9 @@
+// Autor: Acosta Quintana, Lautaro
+
 use carga_datos::{datasets::*, db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
 use clap::Parser;
 use dbdata::DBData;
-use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use std::error::Error;
 
 /* Orden de carga hasta ahora:
@@ -49,8 +51,11 @@ use std::error::Error;
 */
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version = "0.1.1")]
+/// Programa auxiliar para la generación de datos en el Trabajo Practico Integrador de la Materia
+/// Base de Datos en la Universidad Nacional Regional Resistencia.
 struct Args {
+    /// Cantidad de registros a generar en cada tabla.
     #[arg(short, long, default_value_t = 1000)]
     cantidad: usize,
 }
@@ -82,7 +87,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let reuniones = cargar_tabla::<ReunionesCientificas>(muestras, &pool).await?;
     let percepciones = cargar_tabla::<Percepciones>(muestras, &pool).await?;
     let seguros = cargar_tabla::<Seguros>(muestras, &pool).await?;
-    let obras_sociales = cargar_tabla::<ObrasSociales>(muestras, &pool).await?;
+
+    let mut obras_sociales = cargar_tabla::<ObrasSociales>(muestras, &pool).await?;
+    let dasuten = ObrasSociales::new("D.A.S.U.Te.N", rng.gen());
+    dasuten.insertar_en_db(&pool).await?;
+    obras_sociales.push(dasuten);
 
     let idiomas = [
         "Inglés",
@@ -106,10 +115,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     notificar_carga(INFO, "Empleadores");
 
     let mut instituciones = Vec::with_capacity(muestras);
-    for _ in 1..=muestras {
+    for i in 1..=muestras {
         let direccion = direcciones.choose(&mut rng).unwrap();
-        let nombre_inst = nombre_universidades.choose(&mut rng).unwrap();
-        let fila = Instituciones::new(direccion, nombre_inst);
+        let nombre_inst = if nombre_universidades.len() > i {
+            nombre_universidades[i].clone()
+        } else {
+            break;
+        };
+        let fila = Instituciones::new(direccion, &nombre_inst);
         fila.insertar_en_db(&pool).await?;
         instituciones.push(fila);
     }
@@ -253,47 +266,33 @@ async fn main() -> Result<(), Box<dyn Error>> {
     notificar_carga(INFO, "Horarios");
 
     cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
-    notificar_carga(INFO, "AtendioA");
 
     cargar_se_da_idiomas(&idiomas, &instituciones, &pool).await?;
-    notificar_carga(INFO, "SeDaIdioma");
 
     cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
-    notificar_carga(INFO, "ConoceIdiomas");
 
     cargar_beneficia(&obras_sociales, &familiares, muestras, &pool).await?;
-    notificar_carga(INFO, "Beneficia");
 
     cargar_posee_titulo(&titulos, &profesores, muestras, &pool).await?;
-    notificar_carga(INFO, "PoseeTitulos");
 
     cargar_se_da_titulo(&titulos, &instituciones, &pool).await?;
-    notificar_carga(INFO, "SeDaTitulos");
 
     cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool).await?;
-    notificar_carga(INFO, "RealizaInves");
 
     cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool).await?;
 
-    notificar_carga(INFO, "RealizoAct");
-
     cargar_referencias_bibliograficas(&publicaciones, &pool).await?;
-    notificar_carga(INFO, "ReferenciasBibliograficas");
 
     cargar_publico(&publicaciones, &profesores, &pool).await?;
-    notificar_carga(INFO, "PublicoPublicacion");
 
     cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
-    notificar_carga(INFO, "ParticipoEnReunion");
 
     cargar_percibe_en(&percepciones, &profesores, &pool).await?;
     notificar_carga(INFO, "PercibeEn");
 
     cargar_reside_en(&profesores, &direcciones, &pool).await?;
-    notificar_carga(INFO, "ResideEn");
 
     cargar_asegura_a(&seguros, &familiares, &pool).await?;
-    notificar_carga(INFO, "AseguraA");
 
     Ok(())
 }
