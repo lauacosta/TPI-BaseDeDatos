@@ -9,7 +9,7 @@ El repositorio en GitHub se encuentra [`aquí`](https://github.com/lauacosta/Bas
 $ // Reemplazar con los datos correspondientes:
 $ DATABASE_URL=mysql://<usuario>:<contraseña>@localhost/<base de datos>
 ```
-2. Acto siguiente, en la carpeta 'bin' se encuentran las carpetas 'Linux' y 'Windows', las cuales contienen los binarios para cada plataforma.
+2. En la carpeta 'bin' se encuentran los binarios para cada plataforma.
 ```
 $ // Si se ejecuta desde Linux:
 $ ./bin/Linux/entrega -h
