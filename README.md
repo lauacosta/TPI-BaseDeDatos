@@ -3,7 +3,35 @@ El siguiente proyecto fue realizado por los alumnos de la Universidad Tecnológi
 
 El repositorio en GitHub se encuentra [`aquí`](https://github.com/lauacosta/BaseDeDatos).
 
-## Setup
+La estructura de la aplicación, ignorando la carpeta para los macros, es la siguiente:
+```
+.
+└── carga_datos
+   ├── bin
+   │  ├── Linux
+   │  │  └── entrega
+   │  └── Windows
+   │     └── entrega.exe
+   ├── Cargo.lock
+   ├── Cargo.toml
+   ├── datasets
+   │  ├── provincia_localidad_calles.csv
+   │  └── universidades.csv
+   ├── migrations
+   │  └── 20240606032226_cargar_tablas.sql
+   ├── README.md
+   ├── scripts
+   │  └── compilar_binarios.sh
+   └── src
+      ├── datasets.rs
+      ├── db_cargasfk.rs
+      ├── db_tablas.rs
+      ├── lib.rs
+      └── main.rs
+```
+
+
+### Setup
 1. Se necesita declarar la URL de la base de datos dentro de un archivo .env en la misma carpeta que Cargo.toml.
 ```
 $ // Reemplazar con los datos correspondientes:
