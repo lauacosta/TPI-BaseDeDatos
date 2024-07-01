@@ -7,6 +7,8 @@ La estructura de la aplicación, ignorando la carpeta para los macros, es la sig
 ```
 .
 └── carga_datos
+   ├── .env
+   ├── .gitignore
    ├── bin
    │  ├── Linux
    │  │  └── entrega
