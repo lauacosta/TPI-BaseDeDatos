@@ -83,9 +83,10 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
                 .execute(pool)
                 .await
                 {
-                    Ok(_) => (),
+                    Ok(_) => incrementar_contador(INFO).await,
                     Err(err) => {
                         notificar_carga(WARN, &err.to_string());
+                        incrementar_contador(WARN).await;
                     }
                 };
                 Ok(())

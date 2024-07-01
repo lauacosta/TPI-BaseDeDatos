@@ -3,7 +3,11 @@
 use carga_datos::{datasets::*, db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
 use clap::Parser;
 use dbdata::DBData;
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use rand::{
+    rngs::StdRng,
+    seq::{IteratorRandom, SliceRandom},
+    Rng, SeedableRng,
+};
 use std::error::Error;
 
 /* Orden de carga hasta ahora:
@@ -66,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let muestras = Args::parse().cantidad;
-    let nombre_universidades = cargar_de_csv("./datasets/universidades.csv")?;
+    let mut nombre_universidades = cargar_de_csv("./datasets/universidades.csv")?;
     let provincias = cargar_provincias("./datasets/provincia_localidad_calles.csv")?;
     let idiomas = cargar_de_csv("./datasets/idiomas.csv")?;
     let mut rng = StdRng::from_entropy();
@@ -106,12 +110,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     notificar_carga(INFO, "Empleadores");
 
-    // WARN: Como toma los primeros n universidades, no podrá insertarse después de ejecutarse por
-    // primera vez sobre la misma base de datos.
     let mut instituciones = Vec::with_capacity(muestras);
-    for nombre in nombre_universidades.iter().take(muestras) {
+    nombre_universidades.shuffle(&mut rng);
+    for nombre in nombre_universidades
+        .iter()
+        .choose_multiple(&mut rng, muestras)
+    {
         let direccion = direcciones.choose(&mut rng).unwrap();
-        let fila = Instituciones::new(direccion, &nombre);
+        let fila = Instituciones::new(direccion, nombre);
         match fila.insertar_en_db(&pool).await {
             Ok(_) => (),
             Err(err) => {
@@ -259,34 +265,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     notificar_carga(INFO, "Horarios");
 
-    cargar_atendio_a(&cur_conf, &profesores, &pool).await?;
-
-    cargar_se_da_idiomas(&idiomas, &instituciones, &pool).await?;
-
-    cargar_conoce_idiomas(&idiomas, &profesores, &pool).await?;
-
-    cargar_beneficia(&obras_sociales, &familiares, muestras, &pool).await?;
-
-    cargar_posee_titulo(&titulos, &profesores, muestras, &pool).await?;
-
-    cargar_se_da_titulo(&titulos, &instituciones, &pool).await?;
-
-    cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool).await?;
-
-    cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool).await?;
-
-    cargar_referencias_bibliograficas(&publicaciones, &pool).await?;
-
-    cargar_publico(&publicaciones, &profesores, &pool).await?;
-
-    cargar_participo_en_reunion(&reuniones, &profesores, &pool).await?;
-
-    cargar_percibe_en(&percepciones, &profesores, &pool).await?;
-    notificar_carga(INFO, "PercibeEn");
-
-    cargar_reside_en(&profesores, &direcciones, &pool).await?;
-
-    cargar_asegura_a(&seguros, &familiares, &pool).await?;
-
+    let _ = tokio::join!(
+        cargar_atendio_a(&cur_conf, &profesores, &pool),
+        cargar_se_da_idiomas(&idiomas, &instituciones, &pool),
+        cargar_conoce_idiomas(&idiomas, &profesores, &pool),
+        cargar_beneficia(&obras_sociales, &familiares, muestras, &pool),
+        cargar_posee_titulo(&titulos, &profesores, muestras, &pool),
+        cargar_se_da_titulo(&titulos, &instituciones, &pool),
+        cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool),
+        cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool),
+        cargar_referencias_bibliograficas(&publicaciones, &pool),
+        cargar_publico(&publicaciones, &profesores, &pool),
+        cargar_participo_en_reunion(&reuniones, &profesores, &pool),
+        cargar_percibe_en(&percepciones, &profesores, &pool),
+        cargar_reside_en(&profesores, &direcciones, &pool),
+        cargar_asegura_a(&seguros, &familiares, &pool),
+    );
+    generar_reporte().await;
     Ok(())
 }

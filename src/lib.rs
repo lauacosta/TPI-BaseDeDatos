@@ -9,7 +9,9 @@ pub mod datasets;
 pub mod db_cargasfk;
 pub mod db_tablas;
 
-pub const BIND_LIMIT: usize = 65543;
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use tokio::sync::Mutex;
 
 /// Establece una conexión con la base de datos utilizando el URL definido en las variables del
 /// ambiente.
@@ -42,6 +44,7 @@ where
 }
 
 /// Modela los distintos tipos de notificación dentro del programa.
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 pub enum Notificacion {
     INFO,
     WARN,
@@ -60,9 +63,68 @@ pub fn notificar_carga(tipo: Notificacion, data: &str) {
         Notificacion::ERROR => format!("{} {}", "[ERROR]".bright_red().bold(), data),
     };
 
-    eprintln!(
-        "[{}] {}",
-        chrono::Local::now().format("%H:%M:%S").to_string(),
-        msg
-    )
+    eprintln!("[{}] {}", chrono::Local::now().format("%H:%M:%S"), msg)
+}
+
+pub static CONTADOR: Lazy<Mutex<ContadorGlobal>> = Lazy::new(|| Mutex::new(ContadorGlobal::new()));
+
+pub struct ContadorGlobal {
+    total: usize,
+    subtotals: HashMap<Notificacion, usize>,
+}
+
+impl ContadorGlobal {
+    pub fn new() -> Self {
+        Self {
+            total: 0,
+            subtotals: HashMap::new(),
+        }
+    }
+    pub fn increment(&mut self, notif: Notificacion) {
+        self.total += 1;
+        *self.subtotals.entry(notif).or_insert(0) += 1;
+    }
+    pub fn get_total(&self) -> usize {
+        self.total
+    }
+
+    pub fn get_subtotals(&self) -> HashMap<Notificacion, usize> {
+        self.subtotals.clone()
+    }
+}
+
+pub async fn incrementar_contador(category: Notificacion) {
+    let mut counter = CONTADOR.lock().await;
+    counter.increment(category);
+}
+
+pub async fn generar_reporte() {
+    let counter = CONTADOR.lock().await;
+    let total = counter.total;
+    let subtotales = counter.subtotals.clone();
+    let mut info = 0;
+    let mut warn = 0;
+    for (&k, &v) in subtotales.iter() {
+        match k {
+            Notificacion::INFO => info = v,
+            Notificacion::WARN => warn = v,
+            _ => (),
+        }
+    }
+    let msg = format!(
+        "\nLa cantidad de registros que se intentaron cargar fueron: {total}
+    - {:<5} Se cargaron exitosamente. ({:>5.4}%)
+    - {:<5} Fueron rechazados.        ({:>5.4}%)",
+        info,
+        ((info as f64 / total as f64) * 100.0)
+            .to_string()
+            .bright_green()
+            .bold(),
+        warn,
+        ((warn as f64 / total as f64) * 100.0)
+            .to_string()
+            .bright_yellow()
+            .bold()
+    );
+    eprintln!("{msg}");
 }

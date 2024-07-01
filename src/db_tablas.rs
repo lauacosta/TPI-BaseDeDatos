@@ -1,5 +1,5 @@
 // Autor: Acosta Quintana, Lautaro
-use crate::{notificar_carga, Notificacion::*};
+use crate::{incrementar_contador, notificar_carga, Notificacion::*};
 use colored::Colorize;
 use dbdata::DBData;
 use dbdata_derive::DBData;

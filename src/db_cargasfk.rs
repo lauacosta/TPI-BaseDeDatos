@@ -1,5 +1,9 @@
 // Autor: Acosta Quintana, Lautaro
-use crate::{db_tablas::*, notificar_carga, Notificacion::INFO, Notificacion::WARN};
+use crate::{
+    db_tablas::*,
+    incrementar_contador, notificar_carga,
+    Notificacion::{INFO, WARN},
+};
 use fake::{
     faker::{lorem::en::*, time::en::Date},
     Fake,
@@ -42,9 +46,10 @@ pub async fn cargar_asegura_a(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -91,9 +96,10 @@ pub async fn cargar_reside_en(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -133,9 +139,10 @@ pub async fn cargar_percibe_en(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -166,9 +173,10 @@ pub async fn cargar_participo_en_reunion(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -196,9 +204,10 @@ pub async fn cargar_publico(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -226,9 +235,10 @@ pub async fn cargar_referencias_bibliograficas(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -271,9 +281,10 @@ pub async fn cargar_realizo_actividad(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -318,9 +329,10 @@ pub async fn cargar_realiza_investigacion(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -359,8 +371,11 @@ pub async fn cargar_atendio_a(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
-            Err(err) => notificar_carga(WARN, &err.to_string()),
+            Ok(_) => incrementar_contador(INFO).await,
+            Err(err) => {
+                notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
+            }
         };
     }
 
@@ -391,9 +406,10 @@ pub async fn cargar_se_da_titulo(
             .execute(pool)
             .await
             {
-                Ok(_) => (),
+                Ok(_) => incrementar_contador(INFO).await,
                 Err(err) => {
                     notificar_carga(WARN, &err.to_string());
+                    incrementar_contador(WARN).await
                 }
             };
         }
@@ -437,9 +453,10 @@ pub async fn cargar_posee_titulo(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -468,9 +485,10 @@ pub async fn cargar_posee_titulo(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -502,9 +520,10 @@ pub async fn cargar_beneficia(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -534,9 +553,10 @@ pub async fn cargar_se_da_idiomas(
             .execute(pool)
             .await
             {
-                Ok(_) => (),
+                Ok(_) => incrementar_contador(INFO).await,
                 Err(err) => {
                     notificar_carga(WARN, &err.to_string());
+                    incrementar_contador(WARN).await
                 }
             };
         }
@@ -568,9 +588,10 @@ pub async fn cargar_conoce_idiomas(
         .execute(pool)
         .await
         {
-            Ok(_) => (),
+            Ok(_) => incrementar_contador(INFO).await,
             Err(err) => {
                 notificar_carga(WARN, &err.to_string());
+                incrementar_contador(WARN).await
             }
         };
     }
@@ -595,9 +616,10 @@ pub async fn cargar_conoce_idiomas(
             .execute(pool)
             .await
             {
-                Ok(_) => (),
+                Ok(_) => incrementar_contador(INFO).await,
                 Err(err) => {
                     notificar_carga(WARN, &err.to_string());
+                    incrementar_contador(WARN).await
                 }
             };
         }
@@ -614,19 +636,20 @@ pub async fn cargar_idiomas(idiomas: &[String], pool: &Pool<MySql>) -> Result<()
         .await?;
 
     if row_count == 0 {
-        for i in idiomas {
+        for idiom in idiomas {
             match sqlx::query!(
                 r#"
             insert into Idiomas (Nombre) values (?)
             "#,
-                i
+                idiom
             )
             .execute(pool)
             .await
             {
-                Ok(_) => (),
+                Ok(_) => incrementar_contador(INFO).await,
                 Err(err) => {
                     notificar_carga(WARN, &err.to_string());
+                    incrementar_contador(WARN).await
                 }
             };
         }
