@@ -5,8 +5,7 @@ CREATE TABLE Direcciones (
 	Numero int unsigned,
 	Localidad varchar(100) NOT NULL,
 	Provincia varchar(100) NOT NULL,
-	PRIMARY KEY (CodigoPostal, Calle, Numero),
-    CONSTRAINT unique_codigo_provincia UNIQUE (CodigoPostal, Provincia)
+	PRIMARY KEY (CodigoPostal, Calle, Numero)
 );
 
 CREATE TABLE Profesores (
@@ -170,6 +169,7 @@ CREATE TABLE RealizoAct(
 CREATE TABLE ObrasSociales (
     NombreObra varchar(100),
     IDObraSocial int unsigned,
+    UNIQUE (NombreObra),
     PRIMARY KEY (IDObraSocial)
 );
 

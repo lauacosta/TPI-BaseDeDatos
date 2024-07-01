@@ -381,8 +381,8 @@ pub async fn cargar_se_da_titulo(
             let titulo = titulos.choose(&mut *rng).unwrap();
             match sqlx::query!(
                 r#"
-            insert ignore into SeDaTitulo (Titulo, NombreInst, Nivel)
-            values (?,?,?)
+                insert ignore into SeDaTitulo (Titulo, NombreInst, Nivel)
+                values (?,?,?)
             "#,
                 titulo.titulo,
                 inst.nombre,
@@ -398,7 +398,6 @@ pub async fn cargar_se_da_titulo(
             };
         }
     }
-
     notificar_carga(INFO, "SeDaTitulo");
     Ok(())
 }
@@ -487,7 +486,7 @@ pub async fn cargar_beneficia(
     muestras: usize,
     pool: &Pool<MySql>,
 ) -> Result<(), Box<dyn Error>> {
-    let m = GLOBAL_RNG.lock().await.gen_range(0..muestras);
+    let m = GLOBAL_RNG.lock().await.gen_range((muestras / 2)..muestras);
     for _ in 1..=m {
         let familiar = familiares.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
         let obra = obras.choose(&mut *GLOBAL_RNG.lock().await).unwrap();
