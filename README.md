@@ -27,7 +27,6 @@ La estructura de la aplicación, ignorando la carpeta para los macros, es la sig
    │  └── compilar_binarios.sh
    └── src
       ├── datasets.rs
-      ├── db_cargasfk.rs
       ├── db_tablas.rs
       ├── lib.rs
       └── main.rs
