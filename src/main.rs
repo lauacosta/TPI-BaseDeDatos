@@ -1,6 +1,6 @@
 // Autor: Acosta Quintana, Lautaro
 
-use carga_datos::{datasets::*, db_cargasfk::*, db_tablas::*, Notificacion::INFO, *};
+use carga_datos::{datasets::*, db_tablas::*, Notificacion::INFO, *};
 use clap::Parser;
 use dbdata::DBData;
 use rand::{
@@ -72,7 +72,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let muestras = Args::parse().cantidad;
     let mut nombre_universidades = cargar_de_csv("./datasets/universidades.csv")?;
     let provincias = cargar_provincias("./datasets/provincia_localidad_calles.csv")?;
-    let idiomas = cargar_de_csv("./datasets/idiomas.csv")?;
+    let idiomas: Vec<Idiomas> = cargar_de_csv("./datasets/idiomas.csv")?
+        .into_iter()
+        .map(|x| Idiomas::new(&x))
+        .collect();
     let mut rng = StdRng::from_entropy();
 
     // Primero aquellas tablas que no tienen FK.
@@ -98,7 +101,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     dasuten.insertar_en_db(&pool).await?;
     obras_sociales.push(dasuten);
 
-    cargar_idiomas(&idiomas, &pool).await?;
+    let row_count: i64 = sqlx::query_scalar("select count(*) FROM Idiomas")
+        .fetch_one(&pool)
+        .await?;
+
+    if row_count == 0 {
+        for i in &idiomas {
+            i.insertar_en_db(&pool).await?;
+        }
+    }
+
+    notificar_carga(INFO, "Idiomas");
+    //cargar_idiomas(&idiomas, &pool).await?;
 
     let mut empleadores = Vec::with_capacity(muestras);
     for _ in 1..=muestras {
@@ -107,7 +121,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         empleadores.push(fila);
     }
-
     notificar_carga(INFO, "Empleadores");
 
     let mut instituciones = Vec::with_capacity(muestras);
@@ -127,7 +140,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
         instituciones.push(fila);
     }
-
     notificar_carga(INFO, "Instituciones");
 
     let mut cur_conf = Vec::with_capacity(muestras);
@@ -137,7 +149,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         cur_conf.push(fila);
     }
-
     notificar_carga(INFO, "CursosConferencias");
 
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
@@ -148,7 +159,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         act_uni.push(fila);
     }
-
     notificar_carga(INFO, "ActividadesExtensionUniversitaria");
 
     //FIXME: Tiene sentido cargar tantas actividades como muestras?
@@ -159,7 +169,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         act_inv.push(fila);
     }
-
     notificar_carga(INFO, "ActividadesInvestigacion");
 
     let mut profesores = Vec::with_capacity(muestras);
@@ -169,11 +178,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         profesores.push(fila);
     }
-
     notificar_carga(INFO, "Profesores");
 
     let mut contactos = Vec::with_capacity(muestras);
-    for prof in profesores.iter() {
+    for prof in &profesores {
         let fila = Contactos::new(prof);
         fila.insertar_en_db(&pool).await?;
         contactos.push(fila)
@@ -199,7 +207,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         familiares.push(fila);
     }
-
     notificar_carga(INFO, "Familiares");
 
     let mut doc_obras = Vec::with_capacity(muestras);
@@ -228,7 +235,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         dec_car.push(fila);
     }
-
     notificar_carga(INFO, "DeclaracionesDeCargo");
 
     let mut ant_pro = Vec::with_capacity(muestras);
@@ -239,7 +245,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         ant_pro.push(fila)
     }
-
     notificar_carga(INFO, "AntecedentesProfesionales");
 
     let mut ant_doc = Vec::with_capacity(muestras);
@@ -251,7 +256,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         ant_doc.push(fila);
     }
-
     notificar_carga(INFO, "AntecedentesDocentes");
 
     let mut horarios = Vec::with_capacity(muestras);
@@ -262,25 +266,141 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         horarios.push(fila);
     }
-
     notificar_carga(INFO, "Horarios");
 
-    let _ = tokio::join!(
-        cargar_atendio_a(&cur_conf, &profesores, &pool),
-        cargar_se_da_idiomas(&idiomas, &instituciones, &pool),
-        cargar_conoce_idiomas(&idiomas, &profesores, &pool),
-        cargar_beneficia(&obras_sociales, &familiares, muestras, &pool),
-        cargar_posee_titulo(&titulos, &profesores, muestras, &pool),
-        cargar_se_da_titulo(&titulos, &instituciones, &pool),
-        cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool),
-        cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool),
-        cargar_referencias_bibliograficas(&publicaciones, &pool),
-        cargar_publico(&publicaciones, &profesores, &pool),
-        cargar_participo_en_reunion(&reuniones, &profesores, &pool),
-        cargar_percibe_en(&percepciones, &profesores, &pool),
-        cargar_reside_en(&profesores, &direcciones, &pool),
-        cargar_asegura_a(&seguros, &familiares, &pool),
-    );
+    for prof in &profesores {
+        let curso = cur_conf.choose(&mut rng).unwrap();
+        AtendioA::new(curso, prof).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "AtendioA");
+    //cargar_atendio_a(&cur_conf, &profesores, &pool)
+
+    for prof in &profesores {
+        ConoceIdioma::new(&Idiomas::new("Español"), prof)
+            .insertar_en_db(&pool)
+            .await?;
+        for _ in 1..=rng.gen_range(1..3) {
+            let idioma = idiomas.choose(&mut rng).unwrap();
+            ConoceIdioma::new(idioma, prof)
+                .insertar_en_db(&pool)
+                .await?;
+        }
+    }
+    notificar_carga(INFO, "ConoceIdiomas");
+    //cargar_conoce_idiomas(&idiomas, &profesores, &pool),
+
+    for inst in &instituciones {
+        for _ in 1..=rng.gen_range(1..3) {
+            let idioma = idiomas.choose(&mut rng).unwrap();
+            SeDaIdioma::new(idioma, inst).insertar_en_db(&pool).await?;
+        }
+    }
+    notificar_carga(INFO, "SeDaIdiomas");
+    //cargar_se_da_idiomas(&idiomas, &instituciones, &pool),
+
+    for _ in 1..=rng.gen_range((muestras / 2)..muestras) {
+        let obra = obras_sociales.choose(&mut rng).unwrap();
+        let familiar = familiares.choose(&mut rng).unwrap();
+        Beneficia::new(obra, familiar).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "Beneficia");
+    //cargar_beneficia(&obras_sociales, &familiares, muestras, &pool),
+
+    {
+        let (terciarios, otros): (Vec<Titulos>, Vec<Titulos>) = titulos
+            .iter()
+            .cloned()
+            .partition(|x| x.nivel == "Terciario");
+
+        for prof in &profesores {
+            let t = terciarios
+                .choose(&mut rng)
+                .expect("No hay titulos terciarios en la tabla Titulos.");
+            PoseeTitulo::new(t, prof).insertar_en_db(&pool).await?;
+        }
+        for _ in 0..rng.gen_range(0..muestras) {
+            let t = otros
+                .choose(&mut rng)
+                .expect("No hay titulos no terciarios en la tabla Titulos.");
+            let prof = profesores.choose(&mut rng).unwrap();
+            PoseeTitulo::new(t, prof).insertar_en_db(&pool).await?;
+        }
+        notificar_carga(INFO, "PoseeTitulo");
+    }
+    //cargar_posee_titulo(&titulos, &profesores, muestras, &pool),
+
+    for inst in &instituciones {
+        for _ in 1..=rng.gen_range(1..5) {
+            let titulo = titulos.choose(&mut rng).unwrap();
+            SeDaTitulo::new(titulo, inst).insertar_en_db(&pool).await?;
+        }
+    }
+    notificar_carga(INFO, "SeDaTitulo");
+    //cargar_se_da_titulo(&titulos, &instituciones, &pool),
+
+    for _ in 1..=rng.gen_range((muestras / 2)..muestras) {
+        let act = act_inv.choose(&mut rng).unwrap();
+        let prof = profesores.choose(&mut rng).unwrap();
+        RealizaInves::new(act, prof).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "RealizaInvestigacion");
+    //cargar_realiza_investigacion(&act_inv, &profesores, muestras, &pool),
+
+    for _ in 1..=rng.gen_range((muestras / 2)..muestras) {
+        let act = act_uni.choose(&mut rng).unwrap();
+        let prof = profesores.choose(&mut rng).unwrap();
+        RealizoAct::new(act, prof).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "RealizoActividad");
+    //cargar_realizo_actividad(&act_uni, &profesores, muestras, &pool),
+
+    for _ in 1..rng.gen_range(1..publicaciones.len()) {
+        let citador = publicaciones.choose(&mut rng).unwrap();
+        let fuente = publicaciones.choose(&mut rng).unwrap();
+        ReferenciaBibliografica::new(fuente, citador)
+            .insertar_en_db(&pool)
+            .await?;
+    }
+    notificar_carga(INFO, "ReferenciasBibliograficas");
+    //cargar_referencias_bibliograficas(&publicaciones, &pool),
+
+    for p in &publicaciones {
+        let profesor = profesores.choose(&mut rng).unwrap();
+        Publico::new(p, profesor).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "Publico");
+    //cargar_publico(&publicaciones, &profesores, &pool),
+
+    for r in &reuniones {
+        let profesor = profesores.choose(&mut rng).unwrap();
+        ParticipoEnReunion::new(r, profesor)
+            .insertar_en_db(&pool)
+            .await?;
+    }
+    notificar_carga(INFO, "ParticipoEnReunion");
+    //cargar_participo_en_reunion(&reuniones, &profesores, &pool),
+
+    for p in &percepciones {
+        let profesor = profesores.choose(&mut rng).unwrap();
+        PercibeEn::new(p, profesor).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "PercibeEn");
+    //cargar_percibe_en(&percepciones, &profesores, &pool),
+
+    for p in &profesores {
+        let dir = direcciones.choose(&mut rng).unwrap();
+        ResideEn::new(p, dir).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "ResideEn");
+    //cargar_reside_en(&profesores, &direcciones, &pool),
+
+    for s in &seguros {
+        let familiar = familiares.choose(&mut rng).unwrap();
+        AseguraA::new(s, familiar).insertar_en_db(&pool).await?;
+    }
+    notificar_carga(INFO, "AseguraA");
+    //cargar_asegura_a(&seguros, &familiares, &pool),
+
     generar_reporte().await;
     Ok(())
 }

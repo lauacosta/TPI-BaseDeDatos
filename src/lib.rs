@@ -6,7 +6,6 @@ use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 use std::error::Error;
 
 pub mod datasets;
-pub mod db_cargasfk;
 pub mod db_tablas;
 
 use once_cell::sync::Lazy;
@@ -113,8 +112,8 @@ pub async fn generar_reporte() {
     }
     let msg = format!(
         "\nLa cantidad de registros que se intentaron cargar fueron: {total}
-    - {:<5} Se cargaron exitosamente. ({:>5.4}%)
-    - {:<5} Fueron rechazados.        ({:>5.4}%)",
+    - {:<6} Se cargaron exitosamente. ({:>6.4}%)
+    - {:<6} Fueron rechazados.        ({:>6.4}%)",
         info,
         ((info as f64 / total as f64) * 100.0)
             .to_string()

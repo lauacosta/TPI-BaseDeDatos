@@ -797,6 +797,334 @@ impl Familiares {
     }
 }
 
+/// Representa a la tabla AseguraA
+#[derive(Debug, DBData)]
+pub struct AseguraA {
+    pub dni_profesor: Dni,
+    pub dni_familiar: Dni,
+    pub codigo_compania: u32,
+    pub capital_asegurado: f64,
+    pub fecha_ingreso: Date,
+}
+
+impl AseguraA {
+    pub fn new(seguro: &Seguros, familiar: &Familiares) -> Self {
+        let dni_profesor = familiar.dni_profesor.clone();
+        let dni_familiar = familiar.dni_familiar.clone();
+        let fecha_ingreso = Date().fake();
+        let capital_asegurado = GLOBAL_RNG.lock().unwrap().gen_range(100_000.0..1_000_000.0);
+        let codigo_compania = seguro.codigo_compania;
+        Self {
+            dni_profesor,
+            dni_familiar,
+            codigo_compania,
+            capital_asegurado,
+            fecha_ingreso,
+        }
+    }
+}
+
+/// Representa a la tabla ResideEn
+#[derive(Debug, DBData)]
+pub struct ResideEn {
+    pub dni_profesor: Dni,
+    pub piso: Option<u32>,
+    pub departamento: Option<u8>,
+    pub codigo_postal: u32,
+    pub calle: String,
+    pub numero: u32,
+}
+
+impl ResideEn {
+    pub fn new(profesor: &Profesores, direccion: &Direcciones) -> Self {
+        let mut rng = GLOBAL_RNG.lock().unwrap();
+        let vive_en_departamento = rng.gen::<bool>();
+        let piso = if vive_en_departamento {
+            Some(rng.gen_range(1..1000))
+        } else {
+            None
+        };
+        let habitacion: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let departamento = if vive_en_departamento {
+            Some(habitacion[rng.gen_range(0..habitacion.len())])
+        } else {
+            None
+        };
+        Self {
+            dni_profesor: profesor.dni.clone(),
+            piso,
+            departamento,
+            codigo_postal: direccion.codigo_postal,
+            calle: direccion.calle.clone(),
+            numero: direccion.numero,
+        }
+    }
+}
+
+/// Representa a la tabla PercibeEn
+#[derive(Debug, DBData)]
+pub struct PercibeEn {
+    pub dni: Dni,
+    pub institucion_caja: String,
+    pub tipo: String,
+    pub estado_percepcion: String,
+    pub desde: Date,
+}
+
+impl PercibeEn {
+    pub fn new(percepcion: &Percepciones, profesor: &Profesores) -> Self {
+        let desde: Date = Date().fake();
+        let estado_percepcion = ["Suspendido", "Percibiendo"]
+            .choose(&mut *GLOBAL_RNG.lock().unwrap())
+            .unwrap()
+            .to_string();
+        Self {
+            dni: profesor.dni.clone(),
+            institucion_caja: percepcion.institucion_caja.clone(),
+            tipo: percepcion.tipo.clone(),
+            estado_percepcion,
+            desde,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct ParticipoEnReunion {
+    dni_profesor: Dni,
+    titulo: String,
+    fecha: Date,
+    participacion: String,
+}
+
+impl ParticipoEnReunion {
+    pub fn new(reunion: &ReunionesCientificas, profesor: &Profesores) -> Self {
+        let participacion: String = Word().fake();
+        Self {
+            dni_profesor: profesor.dni.clone(),
+            titulo: reunion.titulo.clone(),
+            fecha: reunion.fecha,
+            participacion,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct Publico {
+    id_publicacion: u32,
+    dni_profesor: Dni,
+}
+
+impl Publico {
+    pub fn new(publicacion: &Publicaciones, profesor: &Profesores) -> Self {
+        Self {
+            id_publicacion: publicacion.id_publicacion,
+            dni_profesor: profesor.dni.clone(),
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct ReferenciaBibliografica {
+    id_fuente: u32,
+    id_citador: u32,
+}
+impl ReferenciaBibliografica {
+    pub fn new(fuente: &Publicaciones, citador: &Publicaciones) -> Self {
+        Self {
+            id_fuente: fuente.id_publicacion,
+            id_citador: citador.id_publicacion,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct RealizoAct {
+    id_actividad: u32,
+    dni_profesor: Dni,
+    acciones: String,
+    dedicacion: u32,
+    hasta: Date,
+    desde: Date,
+}
+
+impl RealizoAct {
+    pub fn new(actividad: &ActividadesExtensionUniversitaria, profesor: &Profesores) -> Self {
+        let mut rng = GLOBAL_RNG.lock().unwrap();
+        let acciones: String = Word().fake();
+        let dedicacion = rng.gen_range(1..8);
+        let desde: Date = Date().fake();
+        let hasta = desde + Duration::days(365);
+        Self {
+            id_actividad: actividad.id_actividad,
+            dni_profesor: profesor.dni.clone(),
+            acciones,
+            dedicacion,
+            hasta,
+            desde,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct RealizaInves {
+    id_investigacion: u32,
+    dni_profesor: Dni,
+    dedicacion: u32,
+    desde: Date,
+    hasta: Option<Date>,
+}
+
+impl RealizaInves {
+    pub fn new(actividad: &ActividadesInvestigacion, profesor: &Profesores) -> Self {
+        let mut rng = GLOBAL_RNG.lock().unwrap();
+        let dedicacion = rng.gen_range(1..8);
+        let desde: Date = Date().fake();
+        let hasta = if rng.gen::<bool>() {
+            Some(desde + Duration::days(365))
+        } else {
+            None
+        };
+        Self {
+            id_investigacion: actividad.id_investigacion,
+            dni_profesor: profesor.dni.clone(),
+            dedicacion,
+            hasta,
+            desde,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct SeDaTitulo {
+    titulo: String,
+    nombre_inst: String,
+    nivel: String,
+}
+
+impl SeDaTitulo {
+    pub fn new(titulo: &Titulos, inst: &Instituciones) -> Self {
+        Self {
+            titulo: titulo.titulo.clone(),
+            nombre_inst: inst.nombre.clone(),
+            nivel: titulo.nivel.clone(),
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct PoseeTitulo {
+    dni: Dni,
+    nivel: String,
+    titulo: String,
+    desde: Date,
+    hasta: Date,
+}
+
+impl PoseeTitulo {
+    pub fn new(titulo: &Titulos, profesor: &Profesores) -> Self {
+        let desde: Date = Date().fake();
+        let hasta = desde + Duration::days(365 * 5);
+        Self {
+            dni: profesor.dni.clone(),
+            nivel: titulo.nivel.clone(),
+            titulo: titulo.titulo.clone(),
+            desde,
+            hasta,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct Beneficia {
+    dni_familiar: Dni,
+    dni_profesor: Dni,
+    id_obrasocial: u32,
+}
+
+impl Beneficia {
+    pub fn new(obra: &ObrasSociales, familiar: &Familiares) -> Self {
+        Self {
+            dni_familiar: familiar.dni_familiar.clone(),
+            dni_profesor: familiar.dni_profesor.clone(),
+            id_obrasocial: obra.id_obrasocial,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct SeDaIdioma {
+    nombre_idioma: String,
+    nombre_inst: String,
+}
+
+impl SeDaIdioma {
+    pub fn new(idioma: &Idiomas, inst: &Instituciones) -> Self {
+        Self {
+            nombre_idioma: idioma.nombre.clone(),
+            nombre_inst: inst.nombre.clone(),
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct AtendioA {
+    nombre_curso: String,
+    dni_profesor: Dni,
+    desde: Date,
+    hasta: Option<Date>,
+}
+
+impl AtendioA {
+    pub fn new(curso: &CursosConferencias, prof: &Profesores) -> Self {
+        let desde: Date = Date().fake();
+        let hasta = match curso.tipo.as_str() {
+            "Curso" => Some(desde + Duration::days(30)),
+            "Conferencia" => Some(desde + Duration::days(1)),
+            _ => None,
+        };
+        Self {
+            nombre_curso: curso.nombre_curso.clone(),
+            dni_profesor: prof.dni.clone(),
+            desde,
+            hasta,
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct Idiomas {
+    nombre: String,
+}
+
+impl Idiomas {
+    pub fn new(nombre: &str) -> Self {
+        Self {
+            nombre: nombre.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, DBData)]
+pub struct ConoceIdioma {
+    dni_profesor: Dni,
+    nombre_idioma: String,
+    certificacion: String,
+    nivel: String,
+}
+
+impl ConoceIdioma {
+    pub fn new(idioma: &Idiomas, profesor: &Profesores) -> Self {
+        let nivel: String = Word().fake();
+        let certificacion: String = Word().fake();
+        Self {
+            dni_profesor: profesor.dni.clone(),
+            nombre_idioma: idioma.nombre.clone(),
+            certificacion,
+            nivel,
+        }
+    }
+}
+
 // https://servicioscf.afip.gob.ar/publico/abc/ABCpaso2.aspx?id_nivel1=3036&id_nivel2=3040&p=Conceptos%20b%C3%A1sicos
 #[derive(Debug, Clone, Type)]
 #[sqlx(transparent)]
