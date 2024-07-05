@@ -77,7 +77,7 @@ fn impl_dbdata_macro(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         impl DBData for #table_name {
-            async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>> {
+            async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), anyhow::Error> {
                 match sqlx::query(#insert_query)
                 #field_accessors
                 .execute(pool)

@@ -3,7 +3,6 @@ use colored::Colorize;
 use dbdata::DBData;
 use fake::{Fake, Faker};
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
-use std::error::Error;
 
 pub mod datasets;
 pub mod db_tablas;
@@ -14,7 +13,7 @@ use tokio::sync::Mutex;
 
 /// Establece una conexión con la base de datos utilizando el URL definido en las variables del
 /// ambiente.
-pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
+pub async fn conectar_con_bd() -> anyhow::Result<Pool<MySql>> {
     dotenvy::dotenv().expect("Archivo .env no pudo se encontrado.");
     let db_url =
         std::env::var("DATABASE_URL").expect("No se pudo encontrar la variable 'DATABASE_URL'.");
@@ -26,7 +25,7 @@ pub async fn conectar_con_bd() -> Result<Pool<MySql>, Box<dyn Error>> {
 
 /// Genera e inserta dentro de la base de datos los datos generados completamente de manera
 /// pseudoaleatoria.
-pub async fn cargar_tabla<T>(muestras: usize, pool: &Pool<MySql>) -> Result<Vec<T>, Box<dyn Error>>
+pub async fn cargar_tabla<T>(muestras: usize, pool: &Pool<MySql>) -> anyhow::Result<Vec<T>>
 where
     T: DBData + fake::Dummy<fake::Faker>,
 {

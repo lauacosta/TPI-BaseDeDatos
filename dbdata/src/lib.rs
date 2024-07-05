@@ -1,8 +1,7 @@
 use sqlx::{MySql, Pool};
-use std::error::Error;
 
 #[allow(async_fn_in_trait)]
-/// Representa un dato insertable en la base de datos.
+/// Trait que representa a un dato que sabe cómo insertarse en una base de datos MySQL.
 pub trait DBData {
-    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), Box<dyn Error>>;
+    async fn insertar_en_db(&self, pool: &Pool<MySql>) -> Result<(), anyhow::Error>;
 }

@@ -88,6 +88,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         fila.insertar_en_db(&pool).await?;
         direcciones.push(fila);
     }
+
     notificar_carga(INFO, "Direcciones");
 
     let titulos = cargar_tabla::<Titulos>(muestras, &pool).await?;
@@ -131,13 +132,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     {
         let direccion = direcciones.choose(&mut rng).unwrap();
         let fila = Instituciones::new(direccion, nombre);
-        match fila.insertar_en_db(&pool).await {
-            Ok(_) => (),
-            Err(err) => {
-                eprintln!("{err}");
-                dbg!("{:?}", direccion, &fila);
-            }
-        };
+        fila.insertar_en_db(&pool).await?;
         instituciones.push(fila);
     }
     notificar_carga(INFO, "Instituciones");
@@ -400,6 +395,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     notificar_carga(INFO, "AseguraA");
     //cargar_asegura_a(&seguros, &familiares, &pool),
+    //
 
     generar_reporte().await;
     Ok(())
