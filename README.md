@@ -33,8 +33,8 @@ La estructura de la aplicación, ignorando la carpeta para los macros, es la sig
 ```
 
 
-### Setup
-1. Se necesita declarar la URL de la base de datos dentro de un archivo .env en la misma carpeta que Cargo.toml y ejecutar las migraciones, sea vía sqlx-cli o manualmente.
+### Ejecución
+1. Se necesita declarar la URL de la base de datos dentro de un archivo .env en ./carga_datos/
 ```
 $ // Reemplazar con los datos correspondientes:
 $ DATABASE_URL=mysql://<usuario>:<contraseña>@localhost/<base de datos>
